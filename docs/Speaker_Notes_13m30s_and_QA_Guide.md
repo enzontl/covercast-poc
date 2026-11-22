@@ -138,7 +138,7 @@ Please find attached and linked below our deliverables for CoverCast (Team: Wale
    - Covers all 10 mandatory slides in exact order (Problem → The ask) on the Bistrot Urbain case (12 Paris bistros, €10M F&B purchases).
 
 2. Working Single-Screen PoC (Shareable Browser URL — zero login / zero install):
-   👉 [PASTE YOUR LIVE VERCEL OR NETLIFY URL HERE, e.g. https://covercast-poc.vercel.app]
+   👉 https://enzontl.github.io/covercast-poc/
    - Pre-loaded 1-click scenarios (including the Saturday + Heavy Rain + Porte de Versailles Trade Show demo: 312 covers [287–337 CI], €541 recommended order vs. €787 habitual, $0.000345/call AI telemetry, and 1-click Chef Karim validation).
 
 Best regards,
