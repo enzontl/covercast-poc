@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CoverCast — 10-Slide Pitch Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    @page {
+      size: 1280px 720px;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slide {
+      width: 1280px;
+      height: 720px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      padding: 40px 52px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .slide:last-of-type {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .slide-dark {
+      background: linear-gradient(135deg, #0b1120 0%, #0f172a 60%, #111827 100%);
+      color: #f8fafc;
+    }
+
+    /* Slide Header */
+    .slide-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .slide-dark .slide-top {
+      border-bottom-color: #1e293b;
+    }
+
+    .title-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kicker-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slide-num {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: #0f172a;
+      color: #34d399;
+      letter-spacing: 0.04em;
+    }
+
+    .slide-dark .slide-num {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+
+    .slide-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      color: #0f172a;
+    }
+
+    .slide-dark .slide-title {
+      color: #ffffff;
+    }
+
+    .slide-subtitle {
+      margin: 2px 0 0;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: #475569;
+    }
+
+    .slide-dark .slide-subtitle {
+      color: #94a3b8;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #0f172a;
+    }
+
+    .slide-dark .brand-badge {
+      color: #f8fafc;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      font-size: 11.5px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Slide Body & Footer */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #64748b;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+      margin-top: 12px;
+    }
+
+    .slide-dark .slide-footer {
+      border-top-color: #1e293b;
+      color: #64748b;
+    }
+
+    /* Reusable Grid & Cards */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-2-asym { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .card-white {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    }
+
+    .card-dark {
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px 18px;
+      color: #f8fafc;
+    }
+
+    .card-emerald {
+      background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%);
+      border: 1.5px solid #6ee7b7;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .card-rose {
+      background: linear-gradient(180deg, #fff1f2 0%, #fff5f5 100%);
+      border: 1.5px solid #fda4af;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .card-blue {
+      background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+      border: 1.5px solid #93c5fd;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .eyebrow {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #2563eb;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .eyebrow-emerald { color: #059669; }
+    .eyebrow-rose { color: #e11d48; }
+    .eyebrow-amber { color: #d97706; }
+    .eyebrow-light { color: #34d399; }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+    }
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #334155;
+    }
+
+    .slide-dark p {
+      color: #cbd5e1;
+    }
+
+    .big-stat {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: #0f172a;
+    }
+
+    .stat-rose { color: #be123c; }
+    .stat-emerald { color: #047857; }
+    .stat-blue { color: #1d4ed8; }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #1e293b;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pill-emerald { background: #d1fae5; color: #065f46; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-rose { background: #ffe4e6; color: #9f1239; }
+    .pill-amber { background: #fef3c7; color: #92400e; }
+
+    ul.clean-list {
+      margin: 6px 0 0;
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    ul.clean-list li {
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: #334155;
+    }
+
+    .slide-dark ul.clean-list li {
+      color: #cbd5e1;
+    }
+
+    /* Compact Tables */
+    table.deck-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    table.deck-table th {
+      text-align: left;
+      padding: 7px 10px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1.5px solid #cbd5e1;
+    }
+
+    table.deck-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+
+    table.deck-table tr.highlight-row td {
+      background: #ecfdf5;
+      font-weight: 700;
+      color: #064e3b;
+    }
+
+    .right { text-align: right !important; white-space: nowrap; }
+    .mono { font-family: "JetBrains Mono", monospace; }
+  </style>
+</head>
+<body>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 1: PROBLEM                                                      -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">01 / 10</span>
+          <span class="pill pill-rose">Reference Case · Bistrot Urbain (12 Bistros in Paris · €10M Annual F&amp;B Purchases)</span>
+        </div>
+        <h1 class="slide-title">Problem</h1>
+        <p class="slide-subtitle">Every night at 22:45, fatigued Head Chefs order fresh ingredients by gut feel—burning 8% of food purchases.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-2-asym" style="flex: 1;">
+        <!-- Operational Persona Card -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow">Named Operational Persona</span>
+            <div style="display:flex; align-items:center; gap:12px; margin: 4px 0 12px;">
+              <div style="width:46px; height:46px; border-radius:50%; background:#0f172a; color:#34d399; display:grid; place-items:center; font-weight:800; font-size:16px;">KA</div>
+              <div>
+                <div style="font-size:17px; font-weight:800; color:#0f172a;">Chef Karim (38) — Head Chef, Bistrot Urbain #04</div>
+                <div style="font-size:12.5px; color:#475569;">Leads an <strong>8-person kitchen brigade</strong> · 280–400 covers/day · 65% fresh perishable menu</div>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;">
+              <div class="card" style="padding:9px 10px;">
+                <div style="font-size:10px; font-weight:700; color:#64748b;">KPI #1 · FOOD COST</div>
+                <div style="font-size:14px; font-weight:800; color:#0f172a;">Target &lt; 28.0%</div>
+              </div>
+              <div class="card" style="padding:9px 10px;">
+                <div style="font-size:10px; font-weight:700; color:#64748b;">KPI #2 · SERVICE</div>
+                <div style="font-size:14px; font-weight:800; color:#0f172a;">0 Dish Stockouts</div>
+              </div>
+              <div class="card" style="padding:9px 10px;">
+                <div style="font-size:10px; font-weight:700; color:#64748b;">KPI #3 · QUALITY</div>
+                <div style="font-size:14px; font-weight:800; color:#0f172a;">24–48h Fresh Prep</div>
+              </div>
+            </div>
+
+            <span class="eyebrow eyebrow-rose">Karim’s Nightly 22:45 Friction</span>
+            <ul class="clean-list">
+              <li><strong>Fragmented signals:</strong> Juggles Zenchef bookings, Lightspeed POS, Météo-France, walk-in fridge clipboards &amp; 4 supplier cutoffs (00:00 Rungis deadline).</li>
+              <li><strong>Asymmetric fear of running out:</strong> Running out of Bavette or Cod mid-Saturday ruins guest reviews—so Karim systematically pads orders by <strong>+20% to +30%</strong>.</li>
+              <li><strong>Volatile urban demand:</strong> Heavy rain, transit strikes, or Porte de Versailles trade shows swing walk-ins by <strong>±22%</strong> overnight, turning safety buffers into Monday trash.</li>
+            </ul>
+          </div>
+
+          <div style="background:#f1f5f9; border-left:3px solid #0f172a; padding:9px 12px; border-radius:6px; font-size:12px; color:#1e293b;">
+            <em>“At 11 PM after 350 covers, I don’t do statistical regressions—I copy last Saturday’s Rungis order and add two extra crates just in case.”</em>
+          </div>
+        </div>
+
+        <!-- Quantified Pain & Cost of Inaction -->
+        <div style="display:flex; flex-direction:column; gap:12px; justify-content:space-between;">
+          <div class="grid-2" style="gap:12px;">
+            <div class="card-rose">
+              <span class="eyebrow eyebrow-rose">Waste Per Site / Year</span>
+              <div class="big-stat stat-rose">€67,000</div>
+              <p style="margin-top:4px; font-size:12px;"><strong>8% of €833k</strong> site purchases thrown away annually (€800,000/yr across 12 sites).</p>
+            </div>
+            <div class="card">
+              <span class="eyebrow">Time Lost Every Night</span>
+              <div class="big-stat">45 min</div>
+              <p style="margin-top:4px; font-size:12px;"><strong>230+ hrs/site/yr</strong> of exhausted post-service manual count &amp; supplier ordering.</p>
+            </div>
+          </div>
+
+          <div class="card-white" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <span class="eyebrow eyebrow-amber">The Cost of Inaction — Bistrot Urbain Group (12 Sites)</span>
+              <h3 style="margin-bottom:6px;">€300,000 / Year in Directly Avoidable Perishable Waste</h3>
+              <p style="font-size:12.5px; margin-bottom:12px;">
+                Industry top-quartile fresh bistros operate at <strong>5% structural trim/spoilage</strong> vs. Bistrot Urbain’s <strong>8%</strong> today. Every month of inaction burns <strong>€25,000 in pure EBITDA</strong> across the 12 restaurants (€2,083/site/month).
+              </p>
+            </div>
+
+            <!-- Visual Waste Bar -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; margin-bottom:3px;">
+                  <span>Current Annual Waste (8.0% of €10M purchases)</span>
+                  <span style="color:#be123c;">€800,000 / yr</span>
+                </div>
+                <div style="height:14px; background:#f1f5f9; border-radius:7px; overflow:hidden; display:flex;">
+                  <div style="width:62.5%; background:#64748b;" title="Irreducible prep trim (5%)"></div>
+                  <div style="width:37.5%; background:#e11d48;" title="Avoidable over-ordering waste (3% = €300k)"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; margin-bottom:3px;">
+                  <span>Target With CoverCast (5.0% benchmark)</span>
+                  <span style="color:#047857;">€500,000 / yr (−€300,000 avoidable)</span>
+                </div>
+                <div style="height:14px; background:#f1f5f9; border-radius:7px; overflow:hidden; display:flex;">
+                  <div style="width:62.5%; background:#10b981;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Nightly Supplier Order Copilot</span>
+      <span>Sources: Bistrot Urbain Reference P&amp;L (€10M purchases, 12 Paris sites); ADEME Commercial Catering Waste Benchmark</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 2: SOLUTION                                                     -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">02 / 10</span>
+          <span class="pill pill-emerald">48-Hour Deployment · Explainable Forecast · Chef-in-the-Loop</span>
+        </div>
+        <h1 class="slide-title">Solution</h1>
+        <p class="slide-subtitle">A single-screen nightly copilot that turns tomorrow’s demand signals into a validated ingredient order in 3 minutes.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <!-- Geoffrey Moore Vision Statement -->
+      <div class="card-blue" style="padding: 14px 20px;">
+        <span class="eyebrow">Product Vision Statement</span>
+        <p style="font-size:14px; line-height:1.5; color:#0f172a; font-weight:500;">
+          <strong>For</strong> multi-site casual-dining Head Chefs and Operations Directors <strong>whose</strong> gut-feel nightly supplier orders waste 8% of food purchases and 45 minutes after service, <strong>CoverCast is a</strong> nightly order-preparation copilot <strong>that</strong> reduces food waste toward 5% by generating probabilistic cover forecasts and ingredient-level supplier carts ready in one click. <strong>Unlike</strong> heavy all-in-one restaurant ERPs (<strong>Nory, Inpulse</strong>) requiring months of suite-wide rollout or static inventory trackers (<strong>MarketMan, Restoke</strong>) blind to weather and neighborhood events, <strong>CoverCast</strong> plugs into existing POS and booking tools in 48 hours, explains every adjustment in plain kitchen language, and keeps final order sign-off in the Chef’s hands.
+        </p>
+      </div>
+
+      <!-- Before vs After Journey + Human Control -->
+      <div class="grid-3" style="flex:1;">
+        <div class="card">
+          <span class="eyebrow eyebrow-rose">Before CoverCast · 45 Min / Night</span>
+          <h3>Manual Post-Service Guesswork</h3>
+          <ul class="clean-list">
+            <li><strong>22:45:</strong> Export POS sales &amp; scroll Zenchef party counts manually.</li>
+            <li><strong>23:00:</strong> Check smartphone weather app; miss nearby Expo or transit disruption.</li>
+            <li><strong>23:10:</strong> Convert expected covers into kg/crates mentally; add +25% fear buffer.</li>
+            <li><strong>23:30:</strong> Type separate WhatsApp/email orders to 4–5 Rungis suppliers → <strong>8% waste</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="card-emerald">
+          <span class="eyebrow eyebrow-emerald">After CoverCast · 3 Min / Night</span>
+          <h3>Automated Prep, 1-Click Sign-Off</h3>
+          <ul class="clean-list">
+            <li><strong>22:30 (Auto):</strong> Syncs POS mix, Zenchef bookings, hourly Météo-France &amp; local events (&lt;600m).</li>
+            <li><strong>22:45 (2 sec):</strong> Quantile model outputs <strong>P50 covers + 90% confidence interval</strong> &amp; net SKU packs.</li>
+            <li><strong>22:46:</strong> Plain-English brief flags exact weather/event drivers &amp; 24h shelf-life items.</li>
+            <li><strong>22:48:</strong> Karim spot-checks fridge, tweaks ±1 pack if needed, clicks <strong>Approve</strong> → <strong>5% target</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="card-white" style="border-color:#0f172a; border-width:1.5px;">
+          <span class="eyebrow">Human-in-the-Loop Governance</span>
+          <h3>What Stays 100% Under Chef Control</h3>
+          <ul class="clean-list">
+            <li><strong>Zero autonomous purchasing:</strong> Orders never leave without Karim’s explicit 1-click validation.</li>
+            <li><strong>Physical quality overrides:</strong> 1-tap <code>− / +</code> pack steppers when fridge produce ripens faster than theoretical stock.</li>
+            <li><strong>Chef’s daily specials:</strong> Off-menu slate dishes (<em>ardoise du jour</em>) &amp; private VIP menus added freely.</li>
+            <li><strong>Supplier relationship:</strong> Custom notes attached directly to Rungis/butcher POs.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Nightly Supplier Order Copilot</span>
+      <span>Zero rip-and-replace: sits lightly on top of Lightspeed / Zelty POS + Zenchef / TheFork</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 3: LIVE DEMO                                                    -->
+  <!-- ===================================================================== -->
+  <section class="slide slide-dark">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">03 / 10</span>
+          <span class="pill pill-emerald">Thin-Wrapper Single-Screen PoC · Zero Login · 1-Click Presets</span>
+        </div>
+        <h1 class="slide-title">Live demo</h1>
+        <p class="slide-subtitle">Friday 22:45 at Bistrot Urbain #04 (Montparnasse) — Preparing Saturday’s fresh Rungis supplier order.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <!-- Moment of Truth Banner -->
+      <div style="background:rgba(16,185,129,0.14); border:1.5px solid rgba(52,211,153,0.45); border-radius:12px; padding:14px 20px;">
+        <span class="eyebrow eyebrow-light">The Moment of Truth (Defined in 1 Sentence)</span>
+        <p style="font-size:15.5px; font-weight:700; color:#ffffff; line-height:1.4;">
+          “In under 3 seconds, CoverCast turns tonight’s bookings, heavy rain forecast, nearby trade show, and fridge stock into a <span style="color:#34d399;">312-cover forecast (90% CI: 287–337)</span> and an <span style="color:#34d399;">explained €541 supplier order (vs. €787 habitual)</span>—saving <span style="color:#34d399;">€246</span> in one click.”
+        </p>
+      </div>
+
+      <!-- 3-Step Live Demo Script & Output Preview -->
+      <div class="grid-3" style="flex:1;">
+        <div class="card-dark">
+          <span class="eyebrow eyebrow-light">1 · Real Context Submitted</span>
+          <h3 style="color:#ffffff;">Conflicting Signals Tonight</h3>
+          <ul class="clean-list">
+            <li><strong>Service:</strong> Saturday Peak (Habitual = <strong>395 covers</strong>)</li>
+            <li><strong>Zenchef Bookings:</strong> <strong>198 confirmed</strong> (+12 vs norm)</li>
+            <li><strong>Weather:</strong> <strong>Heavy Rain (14 mm, 9°C)</strong> — terrace closed (−88 walk-ins)</li>
+            <li><strong>Event (&lt;500m):</strong> <strong>Salon Porte de Versailles</strong> (+28 trade-show diners)</li>
+            <li><strong>Walk-in Fridge:</strong> 2.6 kg Cod, 5.7 kg Bavette, 4.2 kg Mesclun on hand</li>
+          </ul>
+        </div>
+
+        <div class="card-dark" style="border-color:#3b82f6;">
+          <span class="eyebrow" style="color:#60a5fa;">2 · Live AI Output (&lt; 1 Sec)</span>
+          <h3 style="color:#ffffff;">Quantile Interval + Net Cart</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0;">
+            <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #1e293b;">
+              <div style="font-size:10px; color:#94a3b8;">FORECAST (P50)</div>
+              <div style="font-size:24px; font-weight:900; color:#60a5fa;">312</div>
+              <div style="font-size:10.5px; color:#cbd5e1;">90% CI: <strong>287 – 337</strong></div>
+            </div>
+            <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #065f46;">
+              <div style="font-size:10px; color:#94a3b8;">NET ORDER</div>
+              <div style="font-size:24px; font-weight:900; color:#34d399;">€541</div>
+              <div style="font-size:10.5px; color:#6ee7b7;">vs €787 (<strong>−€246</strong>)</div>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#cbd5e1;">
+            Cuts 24h Cod (8 kg vs 13 kg, <strong>−€95</strong>) &amp; Bavette (10 kg vs 14 kg, <strong>−€88</strong>) while protecting trade-show starters. Live compute cost displayed: <strong>$0.000345 / call</strong>.
+          </p>
+        </div>
+
+        <div class="card-dark" style="border-color:#10b981;">
+          <span class="eyebrow eyebrow-light">3 · Chef Verification (1 Click)</span>
+          <h3 style="color:#ffffff;">Interactive Jury Stress-Tests</h3>
+          <ul class="clean-list">
+            <li><strong>Scenario #1 (Default):</strong> Rainy Saturday + Expo → saves <strong>€246 (−31.3%)</strong> in 40 seconds.</li>
+            <li><strong>Scenario #2 (1-Click):</strong> Sunny Friday + Match Surge → <strong>418 covers</strong>, adds smart buffer to prevent stockouts.</li>
+            <li><strong>Live Override Test:</strong> Edit fridge Cod to <code>0 kg</code> or tap <code>+1</code> pack → instant deterministic math update &amp; PO export.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Live Link Bar -->
+      <div style="background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:12.5px; color:#e2e8f0;">
+          <strong>Live Browser PoC (No Auth · Pre-loaded Scenarios · Offline-Safe Fallback):</strong>
+          <span class="mono" style="color:#34d399; margin-left:8px;">https://covercast-poc.vercel.app</span>
+        </div>
+        <span class="pill pill-emerald">Backup 90s Video Ready</span>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Live Demo Transition (2 min 30 sec target)</span>
+      <span>Hybrid Architecture: Statistical Quantile Engine (exact math) + Compact LLM API ($0.000345/call causal brief)</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 4: MARKET ANALYSIS                                              -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">04 / 10</span>
+          <span class="pill pill-blue">Bottom-Up Sizing · ARPA €36,000 / Group / Year (Avg. 10 Sites × €300/mo)</span>
+        </div>
+        <h1 class="slide-title">Market analysis</h1>
+        <p class="slide-subtitle">Targeting structured multi-site casual dining groups where fresh food waste directly erodes thin 6–9% EBITDA margins.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-2-asym" style="flex:1;">
+        <!-- TAM / SAM / SOM Funnel -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow">Coherent Bottom-Up Market Sizing (ARPA = €36,000 / Yr)</span>
+            <h3>From European Hospitality Groups to French Bistro Beachhead</h3>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin: 6px 0;">
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-left:5px solid #64748b; border-radius:10px; padding:11px 14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#475569;">TAM · WESTERN EUROPE MULTI-SITE COMMERCIAL CATERING</div>
+                <div style="font-size:12.5px; color:#1e293b;"><strong>8,000 hospitality groups</strong> (5–50 sites, table &amp; fresh casual; Eurostat / FoodService Europe)</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:22px; font-weight:900; color:#0f172a;">€288M</div>
+                <div style="font-size:10.5px; color:#64748b;">ARR Potential</div>
+              </div>
+            </div>
+
+            <div style="background:#eff6ff; border:1px solid #93c5fd; border-left:5px solid #2563eb; border-radius:10px; padding:11px 14px; display:flex; justify-content:space-between; align-items:center; margin-left:18px;">
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#1d4ed8;">SAM · FRANCE URBAN CASUAL-DINING &amp; BISTRO GROUPS</div>
+                <div style="font-size:12.5px; color:#1e293b;"><strong>480 structured groups</strong> (5–25 sites within INSEE Sirene NAF 56.10A’s 102k restaurants)</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:22px; font-weight:900; color:#1d4ed8;">€17.3M</div>
+                <div style="font-size:10.5px; color:#1e40af;">ARR in France</div>
+              </div>
+            </div>
+
+            <div style="background:#ecfdf5; border:1.5px solid #6ee7b7; border-left:5px solid #059669; border-radius:10px; padding:11px 14px; display:flex; justify-content:space-between; align-items:center; margin-left:36px;">
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#047857;">SOM · 3-YEAR DEFENSIBLE TARGET (10% OF FRENCH SAM)</div>
+                <div style="font-size:12.5px; color:#064e3b;"><strong>48 groups (~480 sites)</strong> · Paced: 8 groups (Y1) → 22 (Y2) → 48 (Y3) (~1.3/mo)</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:22px; font-weight:900; color:#047857;">€1.73M</div>
+                <div style="font-size:10.5px; color:#065f46;">Year-3 ARR</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:10px 14px;">
+            <span class="eyebrow" style="margin-bottom:2px;">Initial Beachhead Segment (Months 1–12)</span>
+            <p style="font-size:12px;">
+              <strong>Independent &amp; PE-backed bistro groups (8–20 sites) in Paris, Lyon &amp; Bordeaux</strong> running cloud POS (<em>Lightspeed, Zelty</em>) + online reservations (<em>Zenchef, TheFork</em>) with &gt;60% fresh daily Rungis/local deliveries (e.g., <em>Nouvelle Garde, Fuga, Fitz Group</em> profile).
+            </p>
+          </div>
+        </div>
+
+        <!-- B2B Buying Committee -->
+        <div style="display:flex; flex-direction:column; gap:11px; justify-content:space-between;">
+          <div class="card-white">
+            <span class="eyebrow eyebrow-emerald">Daily End-User (Adoption Gatekeeper)</span>
+            <h3>👨‍🍳 Head Chef — e.g., Karim</h3>
+            <p style="font-size:12px;">
+              Uses CoverCast nightly at 22:45. <strong>Success metric:</strong> zero mid-service stockouts, &lt;3 min mobile routine, retains final authority over supplier quantities.
+            </p>
+          </div>
+
+          <div class="card-blue">
+            <span class="eyebrow">Economic Buyer (Budget Signer)</span>
+            <h3>💼 Group COO / Operations Director &amp; CFO</h3>
+            <p style="font-size:12px;">
+              Signs the €36k/yr group subscription. <strong>Success metric:</strong> verified 1.5–3.0 pt food-cost drop on monthly supplier invoices, <strong>1.4-month payback</strong>, standardized ordering across all sites.
+            </p>
+          </div>
+
+          <div class="card-white">
+            <span class="eyebrow eyebrow-amber">Technical &amp; Culinary Influencer</span>
+            <h3>📋 Multi-Site Executive Chef / F&amp;B Controller</h3>
+            <p style="font-size:12px;">
+              Validates recipe technical sheets (<em>fiches techniques</em>), supplier pack sizes, and POS integration during the 60-day pilot; champions group-wide expansion.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Market Analysis</span>
+      <span>Sources: INSEE Sirene NAF 56.10A (~102,000 traditional table-service units in France), Gira Conseil CAHD Annual Study, Eurostat Horeca</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 5: BUSINESS MODEL AND PRICE                                     -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">05 / 10</span>
+          <span class="pill pill-emerald">€300 / Site / Month · 14% Value Capture · 80% SaaS Gross Margin</span>
+        </div>
+        <h1 class="slide-title">Business model and price</h1>
+        <p class="slide-subtitle">Simple per-location B2B SaaS subscription anchored in market benchmarks and priced at 14% of addressable waste savings.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <!-- Top 3 Commercial Pillars -->
+      <div class="grid-3">
+        <div class="card-emerald">
+          <span class="eyebrow eyebrow-emerald">Subscription Price</span>
+          <div class="big-stat stat-emerald">€300 <span style="font-size:15px; font-weight:600; color:#065f46;">/ site / mo</span></div>
+          <p style="margin-top:6px; font-size:12px;">
+            Paid annually by Group HQ (<strong>€36,000 ARPA</strong> for 10 sites). Unlimited nightly forecasts, POS/booking sync &amp; supplier PO exports included.
+          </p>
+        </div>
+
+        <div class="card-blue">
+          <span class="eyebrow">Value Sharing Ratio</span>
+          <div class="big-stat stat-blue">14% <span style="font-size:15px; font-weight:600; color:#1e40af;">of value created</span></div>
+          <p style="margin-top:6px; font-size:12px;">
+            Addressable waste reduction = <strong>€2,083 / site / mo</strong> (€300k/yr ÷ 12 sites). Even at 50% Year-1 capture (€1,042/mo), client keeps <strong>&gt;71% of net gains</strong>.
+          </p>
+        </div>
+
+        <div class="card-white">
+          <span class="eyebrow">Unit Cost to Serve</span>
+          <div class="big-stat">€60 <span style="font-size:15px; font-weight:600; color:#475569;">/ site / mo</span></div>
+          <p style="margin-top:6px; font-size:12px;">
+            €240 gross contribution/site/mo = <strong>80% Gross Margin</strong> (POS connectors €22, cloud/weather APIs €13, CS support €25, LLM API &lt;€0.10).
+          </p>
+        </div>
+      </div>
+
+      <!-- Competitive Pricing Benchmark + Land & Expand -->
+      <div class="grid-2-asym" style="flex:1;">
+        <div class="card-white">
+          <span class="eyebrow">Price Anchored Against Verified Restaurant SaaS Benchmarks</span>
+          <table class="deck-table" style="margin-top:6px;">
+            <thead>
+              <tr>
+                <th>Solution</th>
+                <th>Category &amp; Scope</th>
+                <th class="right">Monthly Price / Site</th>
+                <th>Key Limitation vs. CoverCast</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Restoke (Pro)</strong></td>
+                <td>Recipe costing &amp; invoice OCR</td>
+                <td class="right mono">~€235 ($249)</td>
+                <td>No probabilistic weather/event cover forecasting</td>
+              </tr>
+              <tr>
+                <td><strong>MarketMan (Growth)</strong></td>
+                <td>Inventory counts &amp; static par EDI</td>
+                <td class="right mono">~€280 ($299)</td>
+                <td>Static par-levels miss rainy/event demand swings</td>
+              </tr>
+              <tr class="highlight-row">
+                <td><strong>CoverCast</strong></td>
+                <td><strong>Nightly Forecast + 1-Click Order Copilot</strong></td>
+                <td class="right mono"><strong>€300</strong></td>
+                <td><strong>48h setup · CI intervals · €2,083/mo value target</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Nory / Inpulse</strong></td>
+                <td>Full Enterprise OS (HR, Payroll, ERP)</td>
+                <td class="right mono">€199–€329+ (Quote)</td>
+                <td>6–12 wk heavy ERP rollout; black-box complexity</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow eyebrow-amber">Frictionless “Pilot-to-Group” Motion</span>
+            <h3>How Bistrot Urbain Pays €36,600 in Year 1</h3>
+            <ul class="clean-list">
+              <li><strong>Months 1–3 (Paid 3-Site Pilot):</strong> 3 sites × €300/mo × 3 mo (<strong>€2,700</strong>) + <strong>€1,500</strong> turnkey recipe/POS setup.</li>
+              <li><strong>Months 4–12 (Full 12-Site Rollout):</strong> Triggered automatically once waste drops ≥2 pts → 12 sites × €300/mo × 9 mo (<strong>€32,400</strong>).</li>
+              <li><strong>Year-1 Total TCO = €36,600</strong> (Year-2+ full 12-site run-rate = €43,200/yr).</li>
+            </ul>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; font-size:11.5px; color:#0f172a;">
+            <strong>Future Upsell Lever (Year 2+):</strong> HQ Multi-Site Central Kitchen &amp; Supplier Price-Drift Module (+€90/site/mo → 118% Net Revenue Retention).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Business Model &amp; Pricing</span>
+      <span>Benchmarks: Published 2026 SaaS tiers (MarketMan Starter/Growth $249–$299, Restoke Pro $249, Nory/Inpulse industry group quotes)</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 6: TRACTION                                                     -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">06 / 10</span>
+          <span class="pill pill-blue">Field Discovery · Pay / Switch / Degrade Validation · Live PoC Metrics</span>
+        </div>
+        <h1 class="slide-title">Traction</h1>
+        <p class="slide-subtitle">Early field validation with Paris kitchen operators and live usability &amp; backtest evidence on our working PoC.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <!-- Top Metrics Row -->
+      <div class="grid-4">
+        <div class="card-white">
+          <span class="eyebrow">Field Discovery</span>
+          <div class="big-stat stat-blue">7</div>
+          <p style="font-size:11.5px; margin-top:4px;"><strong>5 Head/Sous-Chefs + 2 Bistro Ops Directors</strong> interviewed in Paris (10e, 11e, 15e).</p>
+        </div>
+        <div class="card-white">
+          <span class="eyebrow eyebrow-emerald">PoC Order Speed</span>
+          <div class="big-stat stat-emerald">52 sec</div>
+          <p style="font-size:11.5px; margin-top:4px;">Median time to review forecast, adjust 1 SKU &amp; click Approve (vs. <strong>38–50 min</strong> reported today).</p>
+        </div>
+        <div class="card-white">
+          <span class="eyebrow">Backtest Accuracy</span>
+          <div class="big-stat">6.8%</div>
+          <p style="font-size:11.5px; margin-top:4px;">Model MAPE across 52-week multi-weather dataset vs. <strong>21.4%</strong> fixed Saturday habit error.</p>
+        </div>
+        <div class="card-emerald">
+          <span class="eyebrow eyebrow-emerald">Commercial Pipeline</span>
+          <div class="big-stat stat-emerald">2</div>
+          <p style="font-size:11.5px; margin-top:4px;"><strong>Shadow-pilot scoping conversations</strong> initiated with multi-site Paris bistro operators for Q1.</p>
+        </div>
+      </div>
+
+      <!-- Pay / Switch / Degrade Framework -->
+      <div class="grid-3" style="flex:1;">
+        <div class="card-blue">
+          <span class="eyebrow">1 · The “PAY” Test (Economic Buyers)</span>
+          <h3>€300/mo Validated Under Pilot ROI Gate</h3>
+          <p style="font-size:12.5px; margin-bottom:8px;">
+            Both multi-site Ops Directors confirmed <strong>€300/site/month is an immediate “yes” inside site opex authority</strong>—on one strict condition: proving waste reduction on actual Rungis/Metro invoices over a 60-day pilot first.
+          </p>
+          <div style="background:#ffffff; border-radius:7px; padding:8px 10px; font-size:11.5px; color:#1e293b;">
+            <strong>Action taken:</strong> Built our 3-site 60-day Paid Pilot with explicit <strong>≥2.0 pt food-cost Go/No-Go gate</strong> (Slide 10).
+          </div>
+        </div>
+
+        <div class="card-white">
+          <span class="eyebrow eyebrow-amber">2 · The “SWITCH” Test (Workflow Friction)</span>
+          <h3>Refusal of Heavy Inventory Counts</h3>
+          <p style="font-size:12.5px; margin-bottom:8px;">
+            4 out of 5 chefs stated they abandoned prior back-of-house software because it forced <strong>full 200-item shelf counts every night</strong>. They only want to spot-check the <strong>6–10 ultra-perishable high-cost items</strong>.
+          </p>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:8px 10px; font-size:11.5px; color:#1e293b;">
+            <strong>Action taken:</strong> Scoped PoC to top Pareto perishables (fish, meat, buns, greens) representing <strong>74% of spoilage EUR</strong>.
+          </div>
+        </div>
+
+        <div class="card-emerald">
+          <span class="eyebrow eyebrow-emerald">3 · The “DEGRADE” Test (AI Trust &amp; Failure)</span>
+          <h3>Intervals Beat Point Predictions</h3>
+          <p style="font-size:12.5px; margin-bottom:8px;">
+            When shown a single black-box number (“312 covers”), chefs distrusted it. When shown the <strong>90% interval (287–337) + causal breakdown</strong> (Rain −88, Expo +28) + <code>−/+</code> override buttons, trust jumped to <strong>4.6 / 5</strong>.
+          </p>
+          <div style="background:#ffffff; border-radius:7px; padding:8px 10px; font-size:11.5px; color:#064e3b;">
+            <strong>Graceful degradation:</strong> If weather/LLM APIs fail, PoC falls back to deterministic POS baseline with zero downtime.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Traction &amp; Validation</span>
+      <span>Methodology: Pay / Switch / Degrade Discovery Interviews + Interactive PoC v1.0 Task-Completion Testing</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 7: COMPETITION AND DEFENSIBILITY                                -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">07 / 10</span>
+          <span class="pill pill-blue">7-Layer AI Defensibility · Honest Positioning · GDPR &amp; EU AI Act Ready</span>
+        </div>
+        <h1 class="slide-title">Competition and defensibility</h1>
+        <p class="slide-subtitle">We rent commodity LLMs for pennies and build defensible IP in domain orchestration, hospitality connectors, and 60-second Chef UX.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-2-asym" style="flex:1;">
+        <!-- Left: 7-Layer AI Stack (Built vs Rented) -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow">Where Real IP Lives Across the 7 AI Layers</span>
+            <table class="deck-table" style="margin-top:4px;">
+              <thead>
+                <tr>
+                  <th>Layer</th>
+                  <th>Status</th>
+                  <th>CoverCast Architecture &amp; Defensibility</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="highlight-row">
+                  <td><strong>7 · Distribution</strong></td>
+                  <td><span class="pill pill-emerald">Compounding</span></td>
+                  <td>Cross-Paris neighborhood elasticity curves + POS partner channel</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>6 · Workflow UX</strong></td>
+                  <td><span class="pill pill-emerald">Built IP</span></td>
+                  <td>1-screen 22:45 Chef Copilot; 1-click sign-off + override capture</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>5 · Orchestration</strong></td>
+                  <td><span class="pill pill-emerald">Built IP</span></td>
+                  <td>Strict split: statistical engine locks math; LLM only writes brief</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>4 · Domain Model</strong></td>
+                  <td><span class="pill pill-emerald">Built IP</span></td>
+                  <td>Per-site quantile forecaster learning chef overrides &amp; trim yield</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>3 · Data Access</strong></td>
+                  <td><span class="pill pill-emerald">Built Moat</span></td>
+                  <td>48h connectors: Zelty, Lightspeed, Zenchef, Rungis SKU packs</td>
+                </tr>
+                <tr>
+                  <td><strong>2 · Foundation LLM</strong></td>
+                  <td><span class="pill">Rented API</span></td>
+                  <td>Model-agnostic router (<code>gpt-4o-mini</code> / <code>gemini-flash</code> @ $0.000345)</td>
+                </tr>
+                <tr>
+                  <td><strong>1 · Cloud Infra</strong></td>
+                  <td><span class="pill">Rented EU</span></td>
+                  <td>Serverless EU-West (Paris/Frankfurt) — zero GPU capex burden</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Positioning vs Inpulse/Nory/MarketMan + GDPR / AI Act -->
+        <div style="display:flex; flex-direction:column; gap:12px; justify-content:space-between;">
+          <div class="card">
+            <span class="eyebrow">Honest Competitive Positioning</span>
+            <h3>Why Bistros Pick CoverCast Over Existing Tools</h3>
+            <ul class="clean-list">
+              <li><strong>vs. Excel / Gut Feel (85% of bistros):</strong> Eliminates 45-min nightly grind &amp; ±22% weather blind spots from Day 2.</li>
+              <li><strong>vs. MarketMan &amp; Restoke:</strong> Great digital stock-sheets, but static par-levels cannot anticipate tomorrow’s rain + trade show mix.</li>
+              <li><strong>vs. Inpulse &amp; Nory (Established AI Suites):</strong> Powerful enterprise platforms, but require heavy multi-week ERP/HR onboarding. <strong>CoverCast wins mid-size bistro groups on 48h time-to-value, glass-box chef explanations, and focused order simplicity.</strong></li>
+            </ul>
+          </div>
+
+          <div class="card-blue" style="flex:1;">
+            <span class="eyebrow">Regulatory &amp; Responsible AI Guardrails (Verified Nov 2026)</span>
+            <h3>GDPR By Design &amp; EU AI Act Compliant</h3>
+            <ul class="clean-list">
+              <li><strong>GDPR Data Minimization:</strong> Ingests <strong>zero diner PII</strong> (aggregated party counts only—never guest names, phones, or emails). EU-hosted DPAs with zero LLM training retention &amp; 90-day log purge.</li>
+              <li><strong>EU AI Act Classification:</strong> <strong>Minimal / Limited Risk</strong> B2B inventory tool — <strong>strictly outside Annex III High-Risk</strong> (contractually &amp; technically barred from HR/performance scoring of chefs).</li>
+              <li><strong>Art. 4 &amp; Art. 50 Compliance (Active Aug 2026):</strong> Built-in AI output labeling, confidence intervals, 15-min chef AI literacy onboarding, and <strong>mandatory human validation click</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Competition, 7 Layers &amp; Compliance</span>
+      <span>Regulation (EU) 2024/1689 (EU AI Act — Art. 4 Literacy &amp; Art. 50 Transparency in force Aug 2026) &amp; GDPR Art. 5(1)(c)</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 8: TEAM                                                         -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">08 / 10</span>
+          <span class="pill pill-emerald">4 Complementary Co-Founders · Tech, Product, Hospitality Ops &amp; Finance</span>
+        </div>
+        <h1 class="slide-title">Team</h1>
+        <p class="slide-subtitle">An execution-focused founding team combining statistical ML, rapid full-stack product shipping, field GTM, and rigorous unit economics.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-4" style="flex:1;">
+        <!-- Member 1: Waleston Trinh -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#0f172a,#1e293b); color:#34d399; font-weight:800; font-size:16px; display:grid; place-items:center; margin-bottom:12px;">WT</div>
+            <span class="eyebrow">CEO · AI &amp; Forecasting</span>
+            <h3 style="font-size:17px; margin-bottom:4px;">Waleston Trinh</h3>
+            <p style="font-size:12px; color:#475569; margin-bottom:10px;">
+              <strong>Machine Learning &amp; Orchestration Lead</strong>
+            </p>
+            <ul class="clean-list">
+              <li>Architected CoverCast’s hybrid quantile demand forecaster &amp; deterministic safety-stock engine.</li>
+              <li>Designed the model-agnostic LLM guardrail router ($0.000345/call, zero math hallucination).</li>
+              <li>Leads overall product vision &amp; technical roadmap.</li>
+            </ul>
+          </div>
+          <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:11px; color:#2563eb; font-weight:700;">
+            Q&amp;A Domain: AI Stack, 7 Layers &amp; Model Accuracy
+          </div>
+        </div>
+
+        <!-- Member 2: Enzo Natali -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#ffffff; font-weight:800; font-size:16px; display:grid; place-items:center; margin-bottom:12px;">EN</div>
+            <span class="eyebrow">CPO · Product &amp; UX</span>
+            <h3 style="font-size:17px; margin-bottom:4px;">Enzo Natali</h3>
+            <p style="font-size:12px; color:#475569; margin-bottom:10px;">
+              <strong>Full-Stack Product &amp; Integrations Lead</strong>
+            </p>
+            <ul class="clean-list">
+              <li>Built the single-screen Thin-Wrapper Chef Copilot UX achieving 52-second order validation.</li>
+              <li>Owns POS &amp; reservation API connectors (<em>Lightspeed, Zelty, Zenchef</em>) for 48-hour onboarding.</li>
+              <li>Leads usability testing &amp; human-in-the-loop interaction design.</li>
+            </ul>
+          </div>
+          <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:11px; color:#2563eb; font-weight:700;">
+            Q&amp;A Domain: PoC Demo, UX &amp; POS Onboarding
+          </div>
+        </div>
+
+        <!-- Member 3: Alexis Arnaud -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#059669,#10b981); color:#ffffff; font-weight:800; font-size:16px; display:grid; place-items:center; margin-bottom:12px;">AA</div>
+            <span class="eyebrow eyebrow-emerald">COO · Hospitality &amp; GTM</span>
+            <h3 style="font-size:17px; margin-bottom:4px;">Alexis Arnaud</h3>
+            <p style="font-size:12px; color:#475569; margin-bottom:10px;">
+              <strong>Field Operations &amp; Commercial Lead</strong>
+            </p>
+            <ul class="clean-list">
+              <li>Led Paris kitchen discovery interviews &amp; Pay/Switch/Degrade validation with Head Chefs.</li>
+              <li>Maps recipe technical cards (<em>fiches techniques</em>) &amp; Rungis/Metro supplier MOQ catalogs.</li>
+              <li>Owns beachhead sales &amp; 60-day Design Partner pilot execution.</li>
+            </ul>
+          </div>
+          <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:11px; color:#059669; font-weight:700;">
+            Q&amp;A Domain: Persona, Market, GTM &amp; Competition
+          </div>
+        </div>
+
+        <!-- Member 4: Alessandro Arensberg -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#d97706,#f59e0b); color:#ffffff; font-weight:800; font-size:16px; display:grid; place-items:center; margin-bottom:12px;">AR</div>
+            <span class="eyebrow eyebrow-amber">CFO · Finance &amp; Governance</span>
+            <h3 style="font-size:17px; margin-bottom:4px;">Alessandro Arensberg</h3>
+            <p style="font-size:12px; color:#475569; margin-bottom:10px;">
+              <strong>Financial Strategy &amp; Risk Lead</strong>
+            </p>
+            <ul class="clean-list">
+              <li>Built the multi-scenario client ROI engine (310% base / 105% stress test) &amp; 3-year SaaS P&amp;L.</li>
+              <li>Structures CFO-proof pilot waste audits linking CoverCast directly to supplier invoice COGS.</li>
+              <li>Owns GDPR data-minimization &amp; EU AI Act compliance governance.</li>
+            </ul>
+          </div>
+          <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:11px; color:#b45309; font-weight:700;">
+            Q&amp;A Domain: Unit Economics, ROI, P&amp;L &amp; AI Act
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:11px 18px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:12.5px; color:#1e293b;">
+          <strong>Why We Are Legitimate Together:</strong> Zero outsourcing—100% of forecasting math, full-stack PoC code, financial modeling, and Paris bistro field discovery are built in-house, reinforced by culinary ops advisors during pilot deployment.
+        </div>
+        <span class="pill pill-blue">Full-Stack · Quantitative · Field-Driven</span>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Founding Team</span>
+      <span>4 Co-Founders · 100% aligned on Q1 Paris Bistro Pilot Execution</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 9: FINANCIALS                                                   -->
+  <!-- ===================================================================== -->
+  <section class="slide">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">09 / 10</span>
+          <span class="pill pill-emerald">310% Client Year-1 ROI · 1.4-Mo Payback · Breakeven at 11 Groups (Month 11)</span>
+        </div>
+        <h1 class="slide-title">Financials</h1>
+        <p class="slide-subtitle">Hard COGS invoice savings for clients (no “soft time” inflation) + 80% gross-margin SaaS economics for CoverCast.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-2" style="flex:1;">
+        <!-- Left: Client ROI & Named Cash Conversion Mechanism -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow eyebrow-emerald">Client Economics — Bistrot Urbain (12 Sites · €10M Purchases)</span>
+            <h3>Named Cash Mechanism: Direct Supplier Invoice Reduction</h3>
+            <p style="font-size:12px; margin-bottom:10px;">
+              <strong>How value becomes real EUR:</strong> Ordering smaller, calibrated fresh packs cuts physical Rungis/Metro purchase invoices (COGS) while keeping cover revenue unchanged. <em>Note: 2,170 hrs/yr of freed chef closing time is valued at <strong>€0</strong> in base ROI (tracked separately as ~€27k closing-overtime upside).</em>
+            </p>
+
+            <table class="deck-table">
+              <thead>
+                <tr>
+                  <th>Year-1 Adoption Scenario</th>
+                  <th class="right">Hard COGS Saved</th>
+                  <th class="right">Y1 Cost</th>
+                  <th class="right">Net Gain</th>
+                  <th class="right">Net ROI</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Severe Stress Test (25% capture)</td>
+                  <td class="right mono">€75,000</td>
+                  <td class="right mono">€36,600</td>
+                  <td class="right mono">+€38,400</td>
+                  <td class="right mono"><strong>105%</strong></td>
+                </tr>
+                <tr>
+                  <td>Conservative Low (30% capture)</td>
+                  <td class="right mono">€90,000</td>
+                  <td class="right mono">€36,600</td>
+                  <td class="right mono">+€53,400</td>
+                  <td class="right mono"><strong>146%</strong></td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>Realistic Base (50% Y1 capture)</strong></td>
+                  <td class="right mono"><strong>€150,000</strong></td>
+                  <td class="right mono"><strong>€36,600</strong></td>
+                  <td class="right mono"><strong>+€113,400</strong></td>
+                  <td class="right mono"><strong>310%</strong></td>
+                </tr>
+                <tr>
+                  <td>High Adoption (60% capture)</td>
+                  <td class="right mono">€180,000</td>
+                  <td class="right mono">€36,600</td>
+                  <td class="right mono">+€143,400</td>
+                  <td class="right mono"><strong>392%</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid-2" style="gap:10px; margin-top:10px;">
+            <div class="card-emerald" style="padding:10px 12px;">
+              <div style="font-size:10.5px; font-weight:800; color:#065f46;">CLIENT PAYBACK PERIOD</div>
+              <div style="font-size:22px; font-weight:900; color:#047857;">1.4 Months</div>
+              <div style="font-size:11px; color:#065f46;">Risk-proof even at 25% adoption</div>
+            </div>
+            <div class="card-blue" style="padding:10px 12px;">
+              <div style="font-size:10.5px; font-weight:800; color:#1e40af;">AI COMPUTE COST VS. VALUE</div>
+              <div style="font-size:20px; font-weight:900; color:#1d4ed8;" class="mono">$0.000345 <span style="font-size:11px;">/ call</span></div>
+              <div style="font-size:11px; color:#1e40af;">&lt;€0.01/site/mo vs €1,042/mo Y1 gain</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: CoverCast 3-Year P&L Forecast -->
+        <div class="card-white" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow">CoverCast 3-Year P&amp;L Projection (ARPA €36,000 · 80% GM)</span>
+            <h3>Path to €1.73M ARR &amp; Month-11 Breakeven</h3>
+            <table class="deck-table" style="margin-top:8px;">
+              <thead>
+                <tr>
+                  <th>Metric (EUR)</th>
+                  <th class="right">Year 1</th>
+                  <th class="right">Year 2</th>
+                  <th class="right">Year 3</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Active Groups (Avg. 10 sites)</td>
+                  <td class="right mono">12 (M12)</td>
+                  <td class="right mono">26</td>
+                  <td class="right mono"><strong>48 (SOM)</strong></td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>Ending ARR (€300/site/mo)</strong></td>
+                  <td class="right mono"><strong>€432,000</strong></td>
+                  <td class="right mono"><strong>€936,000</strong></td>
+                  <td class="right mono"><strong>€1,728,000</strong></td>
+                </tr>
+                <tr>
+                  <td>Recognized Revenue (ramped)</td>
+                  <td class="right mono">€216,000</td>
+                  <td class="right mono">€684,000</td>
+                  <td class="right mono">€1,332,000</td>
+                </tr>
+                <tr>
+                  <td>COGS (€60/site/mo = 20%)</td>
+                  <td class="right mono">(€43,200)</td>
+                  <td class="right mono">(€136,800)</td>
+                  <td class="right mono">(€266,400)</td>
+                </tr>
+                <tr>
+                  <td><strong>Gross Profit (80% Margin)</strong></td>
+                  <td class="right mono"><strong>€172,800</strong></td>
+                  <td class="right mono"><strong>€547,200</strong></td>
+                  <td class="right mono"><strong>€1,065,600</strong></td>
+                </tr>
+                <tr>
+                  <td>Fixed Operating Opex</td>
+                  <td class="right mono">(€300,000)</td>
+                  <td class="right mono">(€440,000)</td>
+                  <td class="right mono">(€620,000)</td>
+                </tr>
+                <tr>
+                  <td><strong>EBITDA</strong></td>
+                  <td class="right mono" style="color:#be123c;">(€127,200)</td>
+                  <td class="right mono" style="color:#047857;"><strong>+€107,200</strong></td>
+                  <td class="right mono" style="color:#047857;"><strong>+€445,600</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card" style="padding:11px 14px;">
+            <span class="eyebrow eyebrow-amber" style="margin-bottom:3px;">Exact Breakeven Mechanics (Month 11)</span>
+            <p style="font-size:12px;">
+              With lean Year-1 fixed burn of <strong>€25,000 / month</strong>, each 10-site group generates <strong>€2,400 / month</strong> in gross margin (10 × €240). Signing <strong>11 groups (~110 sites) in Month 11</strong> yields <strong>€26,400/mo gross profit &gt; €25,000/mo burn</strong>—reaching cash breakeven with €120k+ runway buffer intact.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Financials &amp; Unit Economics</span>
+      <span>Full spreadsheet sensitivity model included · 100% consistent with Reference Case (€300k avoidable, 50% Y1 = €150k, €36.6k Y1 cost)</span>
+    </footer>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE 10: THE ASK                                                     -->
+  <!-- ===================================================================== -->
+  <section class="slide slide-dark">
+    <header class="slide-top">
+      <div class="title-stack">
+        <div class="kicker-row">
+          <span class="slide-num">10 / 10</span>
+          <span class="pill pill-emerald">€250,000 Pre-Seed (18 Months) + 3 Paid Design Partner Pilots</span>
+        </div>
+        <h1 class="slide-title">The ask</h1>
+        <p class="slide-subtitle">Fueling the transition from live PoC to 11+ paying restaurant groups and monthly profitability in 11 months.</p>
+      </div>
+      <div class="brand-badge"><span class="brand-icon">CC</span>CoverCast</div>
+    </header>
+
+    <div class="slide-body">
+      <div class="grid-2" style="flex:1;">
+        <!-- Left: €250,000 Allocation -->
+        <div class="card-dark" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span class="eyebrow eyebrow-light">Capital Ask · 18-Month Runway Past Breakeven</span>
+            <div style="font-size:40px; font-weight:900; color:#34d399; letter-spacing:-0.03em; margin: 2px 0 12px;">
+              €250,000 <span style="font-size:16px; font-weight:600; color:#94a3b8;">Pre-Seed Financing</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                  <span>40% · Product &amp; POS/Supplier Connectors</span>
+                  <span class="mono" style="color:#34d399;">€100,000</span>
+                </div>
+                <div style="height:8px; background:#1e293b; border-radius:4px;"><div style="width:40%; height:100%; background:#10b981; border-radius:4px;"></div></div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Production Lightspeed/Zelty/Zenchef sync, Rungis EDI export, per-site calibration loop.</div>
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                  <span>30% · Go-to-Market &amp; 48h Chef Onboarding</span>
+                  <span class="mono" style="color:#60a5fa;">€75,000</span>
+                </div>
+                <div style="height:8px; background:#1e293b; border-radius:4px;"><div style="width:30%; height:100%; background:#3b82f6; border-radius:4px;"></div></div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Founder-led Paris/Lyon bistro sales, recipe card digitization, F&amp;B consultant partnerships.</div>
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                  <span>20% · Cloud SLA, Customer Success &amp; Compliance</span>
+                  <span class="mono" style="color:#fbbf24;">€50,000</span>
+                </div>
+                <div style="height:8px; background:#1e293b; border-radius:4px;"><div style="width:20%; height:100%; background:#f59e0b; border-radius:4px;"></div></div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">99.9% nightly 22:30 uptime SLA, monthly CFO waste audits, GDPR/DPA security hardening.</div>
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                  <span>10% · Working Capital Contingency Buffer</span>
+                  <span class="mono" style="color:#cbd5e1;">€25,000</span>
+                </div>
+                <div style="height:8px; background:#1e293b; border-radius:4px;"><div style="width:10%; height:100%; background:#94a3b8; border-radius:4px;"></div></div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Absorbs hospitality seasonal payment cycles up to Month-11 cash breakeven.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 3 Design Partner Pilots + Strict Go / No-Go Gates -->
+        <div style="display:flex; flex-direction:column; gap:12px; justify-content:space-between;">
+          <div class="card-dark" style="border-color:#10b981; flex:1;">
+            <span class="eyebrow eyebrow-light">Commercial Ask · Immediate 60-Day Validation</span>
+            <h3 style="color:#ffffff; font-size:18px;">3 Paid Design Partner Pilots (3 Sites Each)</h3>
+            <p style="font-size:12.5px; color:#cbd5e1; margin-bottom:12px;">
+              Introductions to multi-site Paris casual-dining groups (8–20 locations) for a 60-day paid pilot (€2,700) governed by <strong>3 contractual Go / No-Go conversion gates</strong>:
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px;">
+                <div style="font-size:12px; font-weight:800; color:#34d399;">GATE 1 · FORECAST PRECISION</div>
+                <div style="font-size:12px; color:#e2e8f0;">Cover MAPE <strong>&lt; 8.5%</strong> across 60 consecutive evening services (vs. &gt;20% manual baseline).</div>
+              </div>
+              <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px;">
+                <div style="font-size:12px; font-weight:800; color:#60a5fa;">GATE 2 · KITCHEN HABIT ADOPTION</div>
+                <div style="font-size:12px; color:#e2e8f0;"><strong>≥ 80% nightly Chef 1-click sign-off rate</strong> in under 5 minutes with zero critical service stockouts.</div>
+              </div>
+              <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px;">
+                <div style="font-size:12px; font-weight:800; color:#fbbf24;">GATE 3 · VERIFIED HARD COGS ROI</div>
+                <div style="font-size:12px; color:#e2e8f0;"><strong>≥ 1.8 to 2.0 pts perishable food-cost reduction</strong> audited on supplier invoices → triggers full-group annual contract (€36k ARPA).</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.4); border-radius:10px; padding:11px 16px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:12.5px; color:#f8fafc;">
+              <strong>18-Month Milestone:</strong> <strong>18+ groups signed (~€650k ARR)</strong> · Cash-flow positive · Ready for Seed expansion across France &amp; Benelux.
+            </div>
+            <span class="pill pill-emerald">Thank You · Q&amp;A</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="slide-footer">
+      <span>CoverCast · Waleston Trinh · Enzo Natali · Alexis Arnaud · Alessandro Arensberg</span>
+      <span>Test Live PoC Now: https://covercast-poc.vercel.app</span>
+    </footer>
+  </section>
+
+</body>
+</html>

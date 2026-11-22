@@ -1,0 +1,31 @@
+Section,Metric / Scenario,Unit,Baseline / Assumptions,Stress Test (25%),Conservative (30%),Realistic Base (50%),Upside (60%),Full Target (100%)
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Annual F&B Purchases,EUR,10000000,10000000,10000000,10000000,10000000,10000000
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Baseline Waste Rate (8%),%,8.0%,8.0%,8.0%,8.0%,8.0%,8.0%
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Current Annual Waste,EUR,800000,800000,800000,800000,800000,800000
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Target Waste Rate (5%),%,5.0%,7.25%,7.10%,6.50%,6.20%,5.00%
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Gross Addressable Savings (8% -> 5%),EUR,300000,300000,300000,300000,300000,300000
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Realized Hard COGS Savings (Year 1),EUR,0,75000,90000,150000,180000,300000
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Freed Chef Closing Hours (2170h valued at €0 in base),EUR,0,0,0,0,0,0
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Year-1 Subscription & Pilot TCO (3m pilot + 9m rollout + setup),EUR,0,36600,36600,36600,36600,36600
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Net Cash Gain Year 1,EUR,0,38400,53400,113400,143400,263400
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Client Net ROI Year 1,%,0%,104.9%,145.9%,309.8%,391.8%,719.7%
+CLIENT ROI MODEL (BISTROT URBAIN - 12 SITES),Payback Period (Full Run-Rate Monthly Savings vs Monthly Fee),Months,-,5.8,4.8,1.4,1.2,0.7
+,,,,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Monthly Subscription Price,EUR,300,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Addressable Monthly Waste Saved Per Site (€300k / 12 / 12),EUR,2083.33,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Price as % of Addressable Value Created,%,14.4%,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),AI Call Cost (gpt-4o-mini / gemini-flash per nightly call),USD,0.000345,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Monthly LLM API Cost (30 nightly runs + recalculations),EUR,0.08,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Total Monthly Cost to Serve (POS sync + Cloud + CS + AI),EUR,60.00,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),Monthly Gross Contribution Per Site,EUR,240.00,,,,,
+UNIT ECONOMICS (PER SITE / MONTH),SaaS Gross Margin,%,80.0%,,,,,
+,,,,,,,,
+COVERCAST 3-YEAR P&L PROJECTION,Metric,Unit,Month 11 (Breakeven),Year 1 Total,Year 2 Total,Year 3 Total,,
+COVERCAST 3-YEAR P&L PROJECTION,Active Hospitality Groups (Avg 10 sites/group),Groups,11,12,26,48,,
+COVERCAST 3-YEAR P&L PROJECTION,Active Restaurant Locations,Sites,110,120,260,480,,
+COVERCAST 3-YEAR P&L PROJECTION,Annualized Run-Rate Revenue (ARR),EUR,396000,432000,936000,1728000,,
+COVERCAST 3-YEAR P&L PROJECTION,Recognized Revenue (Ramped),EUR,33000 (mo),216000,684000,1332000,,
+COVERCAST 3-YEAR P&L PROJECTION,Cost of Goods Sold (20% = €60/site/mo),EUR,-6600 (mo),-43200,-136800,-266400,,
+COVERCAST 3-YEAR P&L PROJECTION,Gross Profit (80% Margin),EUR,26400 (mo),172800,547200,1065600,,
+COVERCAST 3-YEAR P&L PROJECTION,Fixed Operating Expenses (€25k/mo in Y1),EUR,-25000 (mo),-300000,-440000,-620000,,
+COVERCAST 3-YEAR P&L PROJECTION,EBITDA,EUR,+1400 (mo),-127200,107200,445600,,
