@@ -35,6 +35,9 @@
         <button type="button" class="preset-btn" data-preset="surge">
           ☀️ Fri · Sunny + Match Surge
         </button>
+        <button type="button" class="preset-btn" data-preset="unknown">
+          ❓ Sat · Unknown Big Event (Hand-off)
+        </button>
         <button type="button" class="preset-btn" data-preset="strike">
           🚇 Tue · Drizzle + Transit Strike
         </button>
@@ -63,7 +66,7 @@
           <div class="field">
             <label for="daySelect">Target Service Day</label>
             <select id="daySelect">
-              <option value="saturday" selected>Saturday (Peak Bistro)</option>
+              <option value="saturday" selected>Saturday (peak)</option>
               <option value="friday">Friday</option>
               <option value="thursday">Thursday</option>
               <option value="wednesday">Wednesday</option>
@@ -85,20 +88,21 @@
         <div class="field">
           <label for="weatherSelect">Météo-France Evening Forecast (Paris 15e)</label>
           <select id="weatherSelect">
-            <option value="heavy_rain" selected>🌧️ Heavy Rain (14 mm · 9°C · 35 km/h wind — terrace closed)</option>
-            <option value="light_rain">🌦️ Light Showers (3 mm · 12°C — reduced walk-ins)</option>
-            <option value="cloudy">⛅ Mild Overcast (0 mm · 16°C — normal baseline)</option>
-            <option value="sunny">☀️ Clear &amp; Warm (0 mm · 22°C — full terrace walk-ins)</option>
+            <option value="heavy_rain" selected>🌧️ Heavy rain · terrace closed</option>
+            <option value="light_rain">🌦️ Light showers · fewer walk-ins</option>
+            <option value="cloudy">⛅ Overcast · normal baseline</option>
+            <option value="sunny">☀️ Clear &amp; warm · full terrace</option>
           </select>
         </div>
 
         <div class="field">
           <label for="eventSelect">Local Event Radar (&lt; 600m radius)</label>
           <select id="eventSelect">
-            <option value="tradeshow" selected>🎪 Salon Porte de Versailles (18,000 visitors · 450m away)</option>
-            <option value="none">📍 No Major Local Event</option>
-            <option value="match">⚽ Parc des Princes / Fan-Zone Match Night (+walk-in surge)</option>
-            <option value="strike">🚇 RATP Metro Line 12 Disruption (−commuter traffic)</option>
+            <option value="tradeshow" selected>🎪 Trade show · 18,000 visitors, 450 m</option>
+            <option value="none">📍 No major local event</option>
+            <option value="match">⚽ Match night · walk-in surge</option>
+            <option value="strike">🚇 Metro line 12 disruption</option>
+            <option value="unknown">❓ Big event not in the radar</option>
           </select>
         </div>
 
@@ -122,7 +126,7 @@
     <!-- RIGHT PANEL: AI Forecast + Explainable Order + 1-Click Chef Validation -->
     <section class="panel output-panel" aria-label="Forecast & Supplier Order">
       <!-- KPI Strip -->
-      <div class="kpi-strip">
+      <div class="kpi-strip" aria-live="polite">
         <div class="kpi-card highlight-forecast">
           <div class="kpi-top">
             <span class="kpi-label">Predicted Covers (P50)</span>
@@ -186,7 +190,7 @@
             🛡️ AI Decision-Support · Chef Sign-Off Required
           </span>
         </div>
-        <p class="ai-headline" id="aiHeadline"></p>
+        <p class="ai-headline" id="aiHeadline" aria-live="polite"></p>
         <div class="ai-drivers-row" id="aiDrivers"></div>
         <div class="chef-watchout" id="chefWatchout"></div>
       </div>
@@ -223,6 +227,12 @@
       </div>
 
       <!-- Bottom 1-Click Validation Bar -->
+      <div class="handoff-banner" id="handoffBanner" hidden>
+        <strong>Low confidence: a big event the model does not know.</strong>
+        <span>The range is wide on purpose. Check the order with the maître d’ before sending.</span>
+        <label class="handoff-check"><input type="checkbox" id="handoffCheck" /> I checked the forecast and the order</label>
+      </div>
+
       <div class="validation-bar" id="validationBar">
         <div class="validation-meta">
           <div class="timer-pill">

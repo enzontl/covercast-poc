@@ -20,6 +20,7 @@ const EVENT_EFFECTS = {
   tradeshow: { label: "Porte de Versailles Expo", coversDelta: 28, ciAdd: 2, note: "Porte de Versailles trade show adds +28 spillover diners" },
   none:      { label: "No Local Event", coversDelta: 0, ciAdd: 0, note: "No major venue spillover within 600m tonight" },
   match:     { label: "Match Night Surge", coversDelta: 36, ciAdd: 5, note: "Match night footfall drives pre-service burger & steak rush (+36)" },
+  unknown:   { label: "Unknown big event (not in radar)", coversDelta: 0, ciAdd: 46, lowConfidence: true, note: "An event the model has never seen: the range is widened and the chef must check before sending" },
   strike:    { label: "RATP Line 12 Disruption", coversDelta: -34, ciAdd: 4, note: "Metro Line 12 disruption cuts cross-city bookings (−34)" }
 };
 
@@ -100,6 +101,13 @@ const SKUS = [
 ];
 
 const PRESETS = {
+  unknown: {
+    day: "saturday",
+    bookings: 198,
+    weather: "cloudy",
+    event: "unknown",
+    stocks: { cod: 2.6, bavette: 5.7, buns: 0.6, mesclun: 4.2, cream: 4.0, tomatoes: 4.4 }
+  },
   reference: {
     day: "saturday",
     bookings: 198,
@@ -157,7 +165,7 @@ function renderStockInputs() {
   stockInputsList.innerHTML = SKUS.map(
     (sku) => `
     <div class="stock-item">
-      <span class="stock-item-name" title="${sku.name}">${sku.name.split(" ").slice(0, 2).join(" ")}</span>
+      <span class="stock-item-name" title="${sku.name}">${sku.name}</span>
       <div class="stock-input-wrap">
         <input
           type="number"
@@ -211,7 +219,8 @@ function computeStatisticalForecast() {
     p50,
     p05,
     p95,
-    halfWidth
+    halfWidth,
+    lowConfidence: Boolean(ev.lowConfidence)
   };
 }
 
@@ -360,6 +369,7 @@ async function callBrowserLlmDirect(provider, apiKey, payload) {
 function renderOutputs(forecast, lines, aiMeta) {
   state.lastForecast = forecast;
   state.lastLines = lines;
+  updateHandoff(forecast);
 
   const totalOrder = lines.reduce((s, l) => s + l.lineEur, 0);
   const totalHabitual = lines.reduce((s, l) => s + l.habitualEur, 0);
@@ -465,19 +475,19 @@ function renderOutputs(forecast, lines, aiMeta) {
           <span class="sku-title">${line.name}</span>
           <span class="sku-supplier">${line.supplier} · €${line.unitPrice}/${line.unit}</span>
         </td>
-        <td><span class="shelf-pill ${line.shelfClass}">${line.shelfLife}</span></td>
-        <td class="num-col">${line.stock.toFixed(1)} ${line.unit}</td>
-        <td class="num-col">${line.grossNeed.toFixed(1)} ${line.unit}</td>
-        <td class="num-col muted">${line.habitualQty} ${line.unit} (€${line.habitualEur})</td>
-        <td class="center-col">
+        <td data-label="Shelf life"><span class="shelf-pill ${line.shelfClass}">${line.shelfLife}</span></td>
+        <td class="num-col" data-label="In fridge">${line.stock.toFixed(1)} ${line.unit}</td>
+        <td class="num-col" data-label="Gross need">${line.grossNeed.toFixed(1)} ${line.unit}</td>
+        <td class="num-col muted" data-label="Habitual">${line.habitualQty} ${line.unit} (€${line.habitualEur})</td>
+        <td class="center-col" data-label="CoverCast order">
           <div class="qty-stepper">
             <button type="button" class="step-btn" data-step="-1" data-sku="${line.id}" aria-label="Decrease ${line.name}">−</button>
             <span class="qty-val">${line.finalQty} ${line.unit}</span>
             <button type="button" class="step-btn" data-step="1" data-sku="${line.id}" aria-label="Increase ${line.name}">+</button>
           </div>
         </td>
-        <td class="num-col"><strong>€${line.lineEur}</strong></td>
-        <td class="num-col">${deltaLabel}</td>
+        <td class="num-col" data-label="Line total"><strong>€${line.lineEur}</strong></td>
+        <td class="num-col" data-label="vs. habitual">${deltaLabel}</td>
       </tr>
     `;
     })
@@ -507,6 +517,7 @@ async function executeFullRun() {
   const runBtn = document.getElementById("runForecastBtn");
   const runLabel = document.getElementById("runBtnLabel");
   runBtn.disabled = true;
+  document.querySelector(".output-panel").classList.add("is-computing");
   runLabel.textContent = "Computing Quantiles & Calling AI...";
 
   state.approved = false;
@@ -568,6 +579,7 @@ async function executeFullRun() {
 
   renderOutputs(forecast, lines, aiMeta);
   runBtn.disabled = false;
+  document.querySelector(".output-panel").classList.remove("is-computing");
   runLabel.textContent = "Recompute Forecast & Supplier Order";
 }
 
@@ -720,3 +732,33 @@ document.getElementById("saveLlmBtn").addEventListener("click", () => {
 // Boot PoC with Reference Demo Scenario
 renderStockInputs();
 executeFullRun();
+
+
+// Hand-off: when the model is not confident, the chef must tick a box before sending
+function updateHandoff(forecast) {
+  const banner = document.getElementById("handoffBanner");
+  const check = document.getElementById("handoffCheck");
+  const low = Boolean(forecast && forecast.lowConfidence);
+  banner.hidden = !low;
+  if (!low) check.checked = false;
+  syncApproveState();
+}
+function syncApproveState() {
+  const low = Boolean(state.lastForecast && state.lastForecast.lowConfidence);
+  const ok = !low || document.getElementById("handoffCheck").checked;
+  approveOrderBtn.disabled = !ok;
+  approveOrderBtn.title = ok ? "" : "Tick the check box above first";
+}
+document.getElementById("handoffCheck").addEventListener("change", syncApproveState);
+
+// Flash a KPI when its value changes, so the chef sees what moved
+(function () {
+  ["kpiCovers", "kpiOrderEur", "kpiSavedEur", "ciBadge"].forEach((id) => {
+    const el = document.getElementById(id);
+    new MutationObserver(() => {
+      el.classList.remove("flash");
+      void el.offsetWidth;
+      el.classList.add("flash");
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+})();
