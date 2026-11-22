@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>CoverCast Pitch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* CoverCast pitch: kitchen-office look. Warm paper, deep green-black ink, teal accent, saffron highlight. Scale: 64 / 40 / 32 / 26, numbers 96. */
+:root { --ink:#16201C; --paper:#F7F4EC; --card:#ECE7DA; --muted:#55605A; --teal:#176654; --saffron:#E3A92B; --line:#D3CCBA; --dmuted:#B9C4BD; --tealbright:#5CC2A6; --darkcard:#22302A; }
+body { font-family:'DM Sans', Arial, sans-serif; }
+section { background:#F7F4EC; color:#16201C; font-family:'DM Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; counter-increment:page; }
+section.dark { background:#16201C; color:#F7F4EC; }
+.eyebrow { font-size:26px; font-weight:700; color:#176654; letter-spacing:2px; margin:0 0 8px; }
+.dark .eyebrow { color:#5CC2A6; }
+h2 { font-size:64px; font-weight:700; margin:0; line-height:1.1; }
+.lead { font-size:40px; font-weight:500; line-height:1.25; margin:16px 0 0; }
+.body { display:flex; gap:48px; margin-top:40px; align-items:flex-start; }
+.col { flex:1; }
+.stack { display:flex; flex-direction:column; gap:24px; }
+.card { background:#ECE7DA; border-radius:16px; padding:32px; display:flex; flex-direction:column; gap:16px; }
+.dark .card { background:#22302A; }
+.card h3 { font-size:40px; font-weight:700; margin:0; line-height:1.15; }
+.label { font-size:26px; font-weight:700; color:#176654; letter-spacing:1px; margin:0; }
+.dark .label { color:#5CC2A6; }
+.text { font-size:32px; line-height:1.35; margin:0; }
+.small { font-size:26px; line-height:1.35; color:#55605A; margin:0; }
+.dark .small { color:#B9C4BD; }
+.big { font-size:64px; font-weight:700; color:#176654; margin:0; line-height:1; width:300px; }
+.dark .big { color:#5CC2A6; }
+.stat { display:flex; gap:32px; align-items:center; border-top:2px solid #D3CCBA; padding:20px 0; }
+.band { background:#E3A92B; color:#16201C; border-radius:12px; padding:20px 32px; font-size:32px; font-weight:500; margin:0; line-height:1.3; }
+.foot { position:absolute; left:128px; top:990px; width:1400px; font-size:24px; color:#55605A; margin:0; }
+.pg { position:absolute; left:1592px; top:990px; width:200px; font-size:24px; color:#55605A; text-align:right; margin:0; }
+.dark .foot { color:#B9C4BD; }
+.dark .pg { color:#B9C4BD; }
+table { font-size:28px; color:#16201C; width:100%; }
+.dark table { color:#F7F4EC; }
+ul { font-size:32px; line-height:1.4; margin:0; padding-left:40px; }
+ol { font-size:32px; line-height:1.4; margin:0; padding-left:44px; }
+li { margin:6px 0; }
+.link { font-size:32px; font-weight:700; color:#5CC2A6; margin:0; }
+
+html,body{margin:0;background:#0d1411}
+body{counter-reset:page}
+#deck{position:relative}
+section{position:relative;box-sizing:border-box;width:1920px;height:1080px;overflow:hidden;margin:0 auto 24px;transform-origin:top left}
+.wrap{margin:0 auto 24px;overflow:hidden}
+@page{size:1920px 1080px;margin:0}
+@media print{html,body{background:none}.wrap{margin:0!important;width:1920px!important;height:1080px!important;break-after:page;overflow:hidden}section{margin:0!important;transform:none!important}}
+</style></head><body>
+<div id="deck">
+<section id="problem">
+<p class="eyebrow">COVERCAST</p>
+<h2>Problem</h2>
+<p class="lead">Karim, a head chef, throws away 67,000 EUR of food a year because he orders by gut feeling.</p>
+<div class="body">
+<div class="col card">
+<h3>Karim, head chef</h3>
+<p class="text">One of the 12 Bistrot Urbain restaurants in Paris: a team of 8, orders from 4 to 5 suppliers every evening.</p>
+<p class="text">Judged on food cost (target 30 %), waste rate and stock-outs per service.</p>
+<p class="small">The buyer is Nadia, head of operations: she owns the 10 M EUR purchases budget and signs.</p>
+</div>
+<div class="col">
+<div class="stat"><p class="big">8 %</p><p class="text">of food purchases end in the bin: 800,000 EUR a year, the cost of doing nothing.</p></div>
+<div class="stat"><p class="big">45 min</p><p class="text">every evening, across 5 tools, to order for the next day (assumption).</p></div>
+<div class="stat"><p class="big">280</p><p class="text">covers a day guessed by gut feeling, with large misses on rainy and event days.</p></div>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI · fictional case, figures are assumptions</p>
+<p class="pg">1 / 10</p>
+
+</section>
+
+<section id="solution">
+<p class="eyebrow">COVERCAST</p>
+<h2>Solution</h2>
+<p class="lead">Karim gets tomorrow’s order already computed and sends it in 5 minutes.</p>
+<div class="body">
+<div class="col card">
+<p class="label">VISION STATEMENT</p>
+<p class="text"><b>For</b> restaurant groups whose chefs order by gut feeling and throw away 8 % of their purchases, <b>CoverCast is</b> a forecasting and ordering tool for kitchens <b>that</b> prepares tomorrow’s order every evening and cuts waste to 5 %. <b>Unlike</b> chain platforms and POS stock modules, <b>it</b> is built for table-service groups: bookings, weather and events drive each service’s forecast, and the chef sends the order in 5 minutes.</p>
+</div>
+<div class="col stack">
+<table>
+<tr><th>Each evening, per restaurant</th><th>Today</th><th>With CoverCast</th></tr>
+<tr><td>Steps</td><td>5</td><td>3</td></tr>
+<tr><td>Minutes</td><td>45</td><td>16</td></tr>
+<tr><td>Tools</td><td>5</td><td>1</td></tr>
+</table>
+<div class="card">
+<p class="label">STAYS UNDER HUMAN CONTROL</p>
+<ul>
+<li>the physical stock count</li>
+<li>the review and adjustment of the order</li>
+<li>the click that sends it</li>
+</ul>
+</div>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI</p>
+<p class="pg">2 / 10</p>
+
+</section>
+
+<section id="demo" class="dark">
+<p class="eyebrow">COVERCAST</p>
+<h2>Live demo</h2>
+<p class="lead">Moment of truth: at 6 pm Karim opens tomorrow’s proposed order and sends it in 5 minutes.</p>
+<div class="body">
+<div class="col stack">
+<p class="label">THE SCENARIO WE PLAY</p>
+<ol>
+<li>The jury picks a date and a weather scenario.</li>
+<li>The forecast of covers and the supplier order update live.</li>
+<li>A big event the model does not know triggers the hand-off: low confidence, the chef must check before sending.</li>
+</ol>
+</div>
+<div class="col card">
+<p class="label">EXPECTED ON THE DEMO SCENARIO</p>
+<p class="text">Saturday, rain, trade fair nearby</p>
+<p class="big" style="width:auto">312 covers</p>
+<p class="text">Order of 541 EUR instead of the usual 787 EUR: 246 EUR not bought tonight.</p>
+<p class="link">enzontl.github.io/covercast-poc</p>
+<p class="small">PoC on synthetic data: calibrated rules stand in for a trained model.</p>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI</p>
+<p class="pg">3 / 10</p>
+
+</section>
+
+<section id="market">
+<p class="eyebrow">COVERCAST</p>
+<h2>Market analysis</h2>
+<p class="lead">480 groups can buy it today: 17.3 M EUR serviceable, 1.73 M EUR of recurring revenue in 3 years.</p>
+<div class="body">
+<div class="col stack">
+<table>
+<tr><th>Level</th><th>Customers</th><th>Market per year</th></tr>
+<tr><td>TAM, Western Europe</td><td>8,000 groups</td><td>288 M EUR</td></tr>
+<tr><td>SAM, France</td><td>480 groups</td><td>17.3 M EUR</td></tr>
+<tr><td>SOM, 3 years</td><td>48 groups</td><td>1.73 M EUR</td></tr>
+</table>
+<p class="text"><b>Beachhead:</b> table-service groups of 5 to 30 sites in France whose POS has an API. First customer: Bistrot Urbain, 12 sites.</p>
+</div>
+<div class="col stack">
+<div class="card"><p class="label">USER</p><p class="text">Karim, head chef: uses it every evening.</p></div>
+<div class="card"><p class="label">ECONOMIC BUYER</p><p class="text">Nadia, head of operations: judged on network food cost, signs.</p></div>
+<div class="card"><p class="label">INFLUENCER</p><p class="text">IT lead or POS provider: approves the integration.</p></div>
+</div>
+</div>
+<p class="foot">Bottom-up: customers × 36,000 EUR (10 sites × 300 EUR × 12). 1,600 groups is an assumption, under 1 % of the ~179,000 restaurant companies counted by INSEE.</p>
+<p class="pg">4 / 10</p>
+
+</section>
+
+<section id="model">
+<p class="eyebrow">COVERCAST</p>
+<h2>Business model and price</h2>
+<p class="lead">Nadia pays 300 EUR per site per month, 14 % of the 2,083 EUR of value created per site.</p>
+<div class="body">
+<div class="col">
+<div class="stat"><p class="big">300 EUR</p><p class="text">subscription per site per month: value grows with each restaurant’s purchases.</p></div>
+<div class="stat"><p class="big">14 %</p><p class="text">of the value created; 29 % if waste only falls to 6.5 %.</p></div>
+<div class="stat"><p class="big">80 %</p><p class="text">gross margin: about 60 EUR cost to serve per site per month.</p></div>
+</div>
+<div class="col">
+<table>
+<tr><th>Benchmark, per location per month</th><th>Price</th></tr>
+<tr><td>Nory, AI ordering</td><td>199 EUR</td></tr>
+<tr><td>Nory, full platform</td><td>329 EUR</td></tr>
+<tr><td>MarketMan, inventory</td><td>from ~239 USD</td></tr>
+<tr><td>Restoke, back-of-house</td><td>from ~39 USD</td></tr>
+<tr style="background:#E3A92B"><td>CoverCast</td><td>300 EUR</td></tr>
+</table>
+</div>
+</div>
+<p class="foot">Public vendor prices, November 2026 (nory.ai, makerstack.co). Inpulse sells on quote only.</p>
+<p class="pg">5 / 10</p>
+
+</section>
+
+<section id="traction">
+<p class="eyebrow">COVERCAST</p>
+<h2>Traction</h2>
+<p class="lead">What is built today, and how the three tests will be run with real chefs.</p>
+<div class="body">
+<div class="col card">
+<p class="label">BUILT</p>
+<ul>
+<li>PoC live on inputs the jury chooses</li>
+<li>ROI model with a stress test: 105 % if waste only falls to 6.5 %</li>
+<li>Pilot design: 6 restaurants against 6 control restaurants, 3 months, go if waste is at or below 6 %</li>
+</ul>
+</div>
+<div class="col card">
+<p class="label">NEXT 14 DAYS, PAY · SWITCH · DEGRADE</p>
+<p class="text"><b>Pay:</b> would a head of operations sign 300 EUR per site? Target: 2 interviews, 1 letter of intent</p>
+<p class="text"><b>Switch:</b> what 5 chefs use today instead: notebook, Excel, POS module</p>
+<p class="text"><b>Degrade:</b> how many dishes run out per week when the forecast is off</p>
+<p class="small">Nothing is claimed as measured yet: interview results will replace these targets.</p>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI</p>
+<p class="pg">6 / 10</p>
+
+</section>
+
+<section id="competition">
+<p class="eyebrow">COVERCAST</p>
+<h2>Competition and defensibility</h2>
+<p class="lead">Inpulse and Nory already forecast and order. Our edge is the chef’s screen, a fast setup and a measured pilot.</p>
+<div class="body">
+<div class="col card">
+<p class="label">ALTERNATIVES</p>
+<p class="small"><b>Notebook and Excel:</b> free, no forecast.</p>
+<p class="small"><b>POS stock module:</b> stock levels, no forecast to order.</p>
+<p class="small"><b>Inpulse:</b> forecasts and orders for networks of 5 to 1,000+ sites, on quote.</p>
+<p class="small"><b>Nory:</b> AI ordering inside a full platform, 199 to 329 EUR.</p>
+</div>
+<div class="col card">
+<p class="label">WHERE OUR IP SITS</p>
+<p class="small"><b>Build:</b> order orchestration and the chef’s screen, forecasts per restaurant.</p>
+<p class="small"><b>Buy:</b> pipeline, observability, a small LLM for explanations.</p>
+<p class="small"><b>Partner:</b> POS providers for data and distribution.</p>
+<p class="small"><b>Moat:</b> wired into recipes, stock and the 6 pm routine.</p>
+</div>
+<div class="col card">
+<p class="label">GUARDRAILS</p>
+<p class="small"><b>GDPR:</b> booking counts only, no names; DPA; EU hosting; sales kept 24 months, logs 12.</p>
+<p class="small"><b>EU AI Act:</b> minimal risk, forecasting only.</p>
+<p class="small"><b>Human:</b> the chef validates every order; his log never scores him.</p>
+</div>
+</div>
+<p class="foot">Inpulse and Nory facts from their public pages, November 2026.</p>
+<p class="pg">7 / 10</p>
+
+</section>
+
+<section id="team">
+<p class="eyebrow">COVERCAST</p>
+<h2>Team</h2>
+<p class="lead">Four people who build the product, sell it, run the numbers and own the forecast model.</p>
+<div class="body">
+<div class="col card">
+<p class="label">DATA &amp; AI · POC</p>
+<h3>Enzo Natali</h3>
+<p class="small">Data &amp; AI apprentice at AfterData; former treasurer and project manager of the Albert School junior consulting association.</p>
+</div>
+<div class="col card">
+<p class="label">MARKET &amp; SALES</p>
+<h3>Alexis Arnaud</h3>
+<p class="small">Owns the go-to-market and the paid pilot with the first restaurant groups.</p>
+</div>
+<div class="col card">
+<p class="label">FINANCE, ROI &amp; COMPLIANCE</p>
+<h3>Alessandro Arensberg</h3>
+<p class="small">Owns the financial model, the client ROI, and GDPR and AI Act safeguards.</p>
+</div>
+<div class="col card">
+<p class="label">FORECAST MODEL</p>
+<h3>Waleston Trinh</h3>
+<p class="small">Owns the covers forecast model and its backtest, and the product vision.</p>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI</p>
+<p class="pg">8 / 10</p>
+
+</section>
+
+<section id="financials">
+<p class="eyebrow">COVERCAST</p>
+<h2>Financials</h2>
+<p class="lead">150,000 EUR of food avoided in year 1 for the customer, 310 % ROI; break-even for us in month 11.</p>
+<div class="body">
+<div class="col stack">
+<table>
+<tr><th>Customer, year 1</th><th>Value</th></tr>
+<tr><td>Mechanism: waste 8 % to 5 %, 50 % adoption</td><td>150,000 EUR</td></tr>
+<tr><td>Range for 30 % to 60 % adoption</td><td>90,000 to 180,000 EUR</td></tr>
+<tr><td>ROI at 25 / 30 / 50 / 60 % adoption</td><td>105 / 146 / 310 / 392 %</td></tr>
+<tr><td>Cost (subscription + setup)</td><td>36,600 EUR</td></tr>
+<tr><td>ROI and payback</td><td>310 %, 1.4 months</td></tr>
+<tr><td>Stress test, waste only to 6.5 %</td><td>ROI 105 %</td></tr>
+</table>
+<p class="small">AI cost: 0.000345 USD per explanation, about 10 USD a month at 480 sites, against 2,083 EUR of value per site.</p>
+</div>
+<div class="col stack">
+<table>
+<tr><th>CoverCast, month</th><th>Revenue</th><th>Net per month</th><th>Cash, cumulative</th></tr>
+<tr><td>6</td><td>15 k</td><td>−13 k</td><td>−133 k</td></tr>
+<tr><td>12</td><td>39 k</td><td>+6 k</td><td>−144 k</td></tr>
+<tr><td>18</td><td>62 k</td><td>+25 k</td><td>−43 k</td></tr>
+<tr><td>24</td><td>86 k</td><td>+43 k</td><td>+171 k</td></tr>
+</table>
+<p class="small">EUR. Assumptions: 25,000 EUR fixed costs a month, 1.3 new groups a month from month 4, 240 EUR margin per site.</p>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI · all figures are assumptions of the course case</p>
+<p class="pg">9 / 10</p>
+
+</section>
+
+<section id="ask" class="dark">
+<p class="eyebrow">COVERCAST</p>
+<h2>The ask</h2>
+<p class="lead">250,000 EUR over 18 months to move from the PoC to 12 paying sites and break-even.</p>
+<div class="body">
+<div class="col stack">
+<table>
+<tr><th>Use of funds (indicative)</th><th>Share</th><th>EUR</th></tr>
+<tr><td>Product and data engineering</td><td>40 %</td><td>100,000</td></tr>
+<tr><td>Pilots and sales</td><td>30 %</td><td>75,000</td></tr>
+<tr><td>Cloud, legal, DPA and compliance</td><td>10 %</td><td>25,000</td></tr>
+<tr><td>Buffer</td><td>20 %</td><td>50,000</td></tr>
+</table>
+<p class="small">The cash low point is about 153,000 EUR in month 10.</p>
+</div>
+<div class="col card">
+<p class="label">MILESTONES AND GATE</p>
+<ul>
+<li>Month 3, go/no-go: waste at or below 6 % in 6 pilot restaurants against 6 control</li>
+<li>Targets tracked: forecast error under 8.5 % over 60 services, order accepted by the chef in 80 % of evenings</li>
+<li>Month 4: Bistrot Urbain on 12 sites, 43,200 EUR a year</li>
+<li>Month 11: monthly break-even</li>
+</ul>
+<p class="small">We also ask the jury for two restaurant groups as design partners.</p>
+</div>
+</div>
+<p class="foot">CoverCast · Monetizing Data &amp; AI · the split of funds is an assumption</p>
+<p class="pg">10 / 10</p>
+
+</section>
+
+
+</div>
+<script>
+(function(){
+  var secs=[].slice.call(document.querySelectorAll('section'));
+  var wraps=secs.map(function(s){var w=document.createElement('div');w.className='wrap';s.parentNode.insertBefore(w,s);w.appendChild(s);return w;});
+  function fit(){
+    if(window.matchMedia('print').matches)return;
+    var k=Math.min(1,(window.innerWidth-24)/1920);
+    wraps.forEach(function(w,i){secs[i].style.transform='scale('+k+')';w.style.width=(1920*k)+'px';w.style.height=(1080*k)+'px';});
+  }
+  window.addEventListener('resize',fit);window.addEventListener('beforeprint',function(){secs.forEach(function(s){s.style.transform='none'})});window.addEventListener('afterprint',fit);fit();
+  var i=0;document.addEventListener('keydown',function(e){
+    if(['ArrowRight','ArrowDown','PageDown',' '].indexOf(e.key)>-1){i=Math.min(wraps.length-1,i+1);wraps[i].scrollIntoView({behavior:'smooth'});e.preventDefault();}
+    if(['ArrowLeft','ArrowUp','PageUp'].indexOf(e.key)>-1){i=Math.max(0,i-1);wraps[i].scrollIntoView({behavior:'smooth'});e.preventDefault();}
+  });
+})();
+</script></body></html>

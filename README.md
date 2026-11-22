@@ -18,7 +18,7 @@
 | Path | Description |
 | :--- | :--- |
 | `index.html`, `styles.css`, `app.js`, `api/analyze.js` | Single-screen CoverCast v1.0 PoC (Moment of Truth: `312` covers `[287–337 CI]`, `€541` vs `€787` habitual, `-€246` saved, `$0.000345/call`) |
-| `pitch-deck/slides.html` & `pitch-deck/export-pdf.ps1` | Editable HTML slide deck source + 1-command headless Chrome PDF exporter |
+| `pitch-deck/CoverCast_Pitch_Deck.html` | Reference 10-slide pitch deck (HTML, 16:9, imposed titles in order). Open in a browser, arrow keys to navigate, print to PDF (Chrome, no margins, background graphics on) |
 | `docs/Speaker_Notes_13m30s_and_QA_Guide.md` | Timed `13m 30s` speaker script, live demo choreography, individual Q&A battlecards & submission email |
 | `docs/CoverCast_Financial_Model.csv` | Multi-scenario client ROI (`310%` base / `105%` stress test) & 3-year SaaS P&L model |
 | `covercast-poc/` | Standalone deployable copy of the PoC (`DEPLOY_README.md` included) |
