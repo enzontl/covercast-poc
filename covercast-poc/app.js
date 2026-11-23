@@ -74,6 +74,7 @@ const state = {
   historyStack: [],
   aiRowNotes: {},
   lastDiffPills: [],
+  lastInfoMessage: "",      // Neutral guardrail reply when no order mutation was triggered
   lastCommandHeard: "",
   lastCostUsd: 0.000345,
   voiceLang: "en-US",
@@ -277,14 +278,27 @@ function render() {
       : `${w.phrase}${ev.phrase ? ` while ${ev.phrase}` : ""} — so CoverCast adds +€${Math.abs(saved)} to prevent mid-service stockouts.`;
   document.getElementById("whyLine").textContent = whySentence;
 
-  // AI Diff Card (Shows exactly what AI changed + prominent Undo)
+  // AI Diff Card (Shows exact changes + Undo, OR safe guardrail reply if no order edit was detected)
+  const undoBtn = document.getElementById("undoCmdBtn");
+  const sparkEl = aiDiffCard.querySelector(".ai-spark");
   if (state.lastDiffPills.length > 0) {
     aiDiffCard.hidden = false;
+    aiDiffCard.classList.remove("info-mode");
+    sparkEl.textContent = "✦ AI updated your order";
     document.getElementById("aiHeardQuote").textContent = `from “${state.lastCommandHeard}”`;
     document.getElementById("aiCostMini").textContent = `$${state.lastCostUsd.toFixed(6)}`;
+    undoBtn.hidden = false;
     document.getElementById("aiDiffPills").innerHTML = state.lastDiffPills
       .map((p) => `<span class="diff-pill">${p}</span>`)
       .join("");
+  } else if (state.lastInfoMessage) {
+    aiDiffCard.hidden = false;
+    aiDiffCard.classList.add("info-mode");
+    sparkEl.textContent = "🛡️ Guardrail · No order changes made";
+    document.getElementById("aiHeardQuote").textContent = state.lastCommandHeard ? `heard “${state.lastCommandHeard}”` : "";
+    document.getElementById("aiCostMini").textContent = "$0.000000";
+    undoBtn.hidden = true;
+    document.getElementById("aiDiffPills").innerHTML = `<div class="ai-info-msg">${state.lastInfoMessage}</div>`;
   } else {
     aiDiffCard.hidden = true;
   }
@@ -370,20 +384,47 @@ function captureSnapshot() {
     overrides: { ...state.overrides },
     aiRowNotes: { ...state.aiRowNotes },
     lastDiffPills: [...state.lastDiffPills],
+    lastInfoMessage: "",
     lastCommandHeard: state.lastCommandHeard
   };
 }
 
+const SKU_KEYWORDS = [
+  { id: "cod",      keys: ["cod", "cabillaud", "fish", "poisson", "sea bass", "bar", "salmon", "saumon"] },
+  { id: "bavette",  keys: ["bavette", "beef", "steak", "boeuf", "bœuf", "meat", "viande"] },
+  { id: "buns",     keys: ["bun", "buns", "brioche", "bread", "pain", "burger"] },
+  { id: "mesclun",  keys: ["salad", "salade", "green", "greens", "mesclun", "lettuce"] },
+  { id: "cream",    keys: ["cream", "crème", "creme", "dairy"] },
+  { id: "tomatoes", keys: ["tomato", "tomatoes", "tomate", "tomates", "herb", "herbs", "herbes"] }
+];
+
+function findMentionedSkus(text) {
+  return SKU_KEYWORDS.filter((item) => item.keys.some((k) => text.includes(k))).map((i) => i.id);
+}
+
 function parseKitchenCommandLocally(rawText) {
-  const t = rawText.toLowerCase();
+  const t = rawText.toLowerCase().trim();
   const prevForecast = computeForecast();
   const prevLines = computeLines(prevForecast);
 
+  // Guardrail A: Voice/text shortcuts for Undo, Reset, or Send
+  if (/^(undo|annule|annuler|revert|cancel last)\b/.test(t)) {
+    return { specialAction: "undo" };
+  }
+  if (/^(reset|réinitialise|remettre)\b/.test(t)) {
+    return { specialAction: "reset" };
+  }
+  if (/\b(send order|send email|approve order|envoie|envoyer la commande|valide la commande)\b/.test(t)) {
+    return { specialAction: "send" };
+  }
+
   let matched = false;
 
-  // 1. Cod swap -> Sea Bass / Salmon
-  if ((t.includes("cod") || t.includes("cabillaud") || t.includes("fish") || t.includes("poisson")) &&
-      (t.includes("sea bass") || t.includes("bar") || t.includes("salmon") || t.includes("saumon") || t.includes("swap") || t.includes("replace") || t.includes("out of") || t.includes("plus de"))) {
+  // 1. Fish / Cod swap -> Sea Bass or Salmon
+  if (
+    (t.includes("cod") || t.includes("cabillaud") || t.includes("fish") || t.includes("poisson")) &&
+    (t.includes("sea bass") || t.includes("bar") || t.includes("salmon") || t.includes("saumon") || t.includes("swap") || t.includes("replace") || t.includes("remplace") || t.includes("out of") || t.includes("plus de"))
+  ) {
     const isSalmon = t.includes("salmon") || t.includes("saumon");
     const codSku = state.skus.find((s) => s.id === "cod");
     if (codSku) {
@@ -394,68 +435,104 @@ function parseKitchenCommandLocally(rawText) {
     }
   }
 
-  // 2. Private party / group covers
-  const groupMatch = t.match(/(?:group|party|table|birthday|anniversaire|groupe|add|\+|extra|booked|réservé)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
-                     t.match(/\b(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\b/);
-  if (groupMatch && !t.includes("kg") && !t.includes("tray")) {
-    const n = Math.min(120, Math.max(4, parseInt(groupMatch[1], 10)));
+  // 2. Group booking OR cancellation ("group of 25", "15 people cancelled", "+20 covers", "-10 guests")
+  const cancelMatch = t.match(/(?:cancel|cancelled|canceled|annul\w*|drop|lost)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
+                      t.match(/\b(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\s*(?:cancel|cancelled|canceled|annul\w*)/);
+  const groupMatch = t.match(/(?:group|party|table|birthday|anniversaire|groupe|extra|booked|réserv\w*)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
+                     t.match(/(?:\+|add|plus)\s*(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\b/) ||
+                     t.match(/\b(\d{1,3})\s*(?:more|extra)?\s*(?:people|guests|covers|couverts|personnes|pax)\b/);
+
+  if (cancelMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
+    const n = Math.min(120, Math.max(2, parseInt(cancelMatch[1], 10)));
+    state.extraCovers -= n;
+    state.extraCoversNote = "Group cancellation";
+    matched = true;
+  } else if (groupMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
+    const n = Math.min(120, Math.max(2, parseInt(groupMatch[1], 10)));
     state.extraCovers += n;
-    state.extraCoversNote = `Group booking`;
+    state.extraCoversNote = "Group booking";
     matched = true;
   }
 
-  // 3. Empty fridge / threw out / spoiled
-  if (t.includes("empty") || t.includes("threw") || t.includes("spoiled") || t.includes("vide") || t.includes("jeté") || t.includes("no ") || t.includes("zero") || t.includes("plus de")) {
-    const map = [
-      { id: "mesclun", keys: ["salad", "green", "mesclun", "salade"] },
-      { id: "cod", keys: ["cod", "cabillaud"] },
-      { id: "bavette", keys: ["beef", "bavette", "steak", "boeuf"] },
-      { id: "buns", keys: ["bun", "bread", "brioche", "pain"] },
-      { id: "cream", keys: ["cream", "crème", "creme"] },
-      { id: "tomatoes", keys: ["tomato", "herb", "tomate"] }
-    ];
-    for (const item of map) {
-      if (item.keys.some((k) => t.includes(k)) && !(item.id === "cod" && matched)) {
-        state.stocks[item.id] = 0;
+  // 3. Fridge stock updates ("fridge empty on salad", "we have 5 kg cod in fridge", "no cream left")
+  const mentionedSkus = findMentionedSkus(t);
+  const isFridgeMention = /\b(fridge|frigo|stock|left|reste|empty|vide|threw|spoiled|jeté|out of|plus de|no |zero|0\s*kg)\b/.test(t);
+  if (mentionedSkus.length > 0 && isFridgeMention && !matched) {
+    const exactStockNum = t.match(/\b(\d+(?:\.\d+)?)\s*(?:kg|kilo|l|liter|litre|trays?)\b/);
+    const setZero = /\b(empty|vide|threw|spoiled|jeté|out of|plus de|no |zero)\b/.test(t) || (exactStockNum && parseFloat(exactStockNum[1]) === 0);
+    mentionedSkus.forEach((id) => {
+      if (setZero) {
+        state.stocks[id] = 0;
+        matched = true;
+      } else if (exactStockNum) {
+        state.stocks[id] = Math.max(0, parseFloat(exactStockNum[1]));
         matched = true;
       }
-    }
+    });
   }
 
-  // 4. Direct qty tweak
-  const qtyMatch = t.match(/(add|more|\+|plus|ajoute|cut|remove|less|minus|-|enlève)\s*(\d{1,2})?/);
-  if (qtyMatch && !matched) {
-    const isMinus = ["cut", "remove", "less", "minus", "-", "enlève"].includes(qtyMatch[1]);
-    const amt = parseInt(qtyMatch[2], 10) || 2;
-    const map = [
-      { id: "cod", keys: ["cod", "fish", "bass", "salmon", "cabillaud"] },
-      { id: "bavette", keys: ["beef", "bavette", "steak", "boeuf"] },
-      { id: "buns", keys: ["bun", "brioche", "tray", "pain"] },
-      { id: "mesclun", keys: ["salad", "green", "mesclun", "salade"] },
-      { id: "cream", keys: ["cream", "crème", "creme"] },
-      { id: "tomatoes", keys: ["tomato", "herb", "tomate"] }
-    ];
-    for (const item of map) {
-      if (item.keys.some((k) => t.includes(k))) {
-        state.overrides[item.id] = (state.overrides[item.id] || 0) + (isMinus ? -amt : amt);
+  // 4. Direct quantity edit ("add 2 kg bavette", "cut cod by 3", "remove tomatoes", "order 12 kg cod")
+  if (mentionedSkus.length > 0 && !matched) {
+    const removeIntent = /\b(remove|delete|skip|don'?t order|pas de|enlève|supprime)\b/.test(t);
+    const minusIntent = /\b(cut|less|minus|reduce|decrease|drop|baisse|moins|-)\b/.test(t);
+    const plusIntent = /\b(add|more|plus|extra|increase|bump|ajoute|\+)\b/.test(t);
+    const setOrderIntent = /\b(order|set|make|put|commande|mets)\s*(\d{1,2})\b/.test(t);
+    const numMatch = t.match(/\b(\d{1,2})\b/);
+
+    mentionedSkus.forEach((id) => {
+      const curLine = prevLines.find((l) => l.id === id);
+      if (!curLine) return;
+      if (removeIntent) {
+        state.overrides[id] = -curLine.recQty;
+        matched = true;
+      } else if (setOrderIntent && numMatch) {
+        const target = parseInt(numMatch[1], 10);
+        state.overrides[id] = target - curLine.recQty;
+        matched = true;
+      } else if (minusIntent) {
+        const amt = numMatch ? parseInt(numMatch[1], 10) : 2;
+        state.overrides[id] = (state.overrides[id] || 0) - amt;
+        matched = true;
+      } else if (plusIntent) {
+        const amt = numMatch ? parseInt(numMatch[1], 10) : 2;
+        state.overrides[id] = (state.overrides[id] || 0) + amt;
         matched = true;
       }
-    }
+    });
   }
 
-  // 5. Weather flip
-  if (t.includes("sunny") || t.includes("clear") || t.includes("no rain") || t.includes("soleil")) {
+  // 5. Explicit weather changes
+  if (/\b(sunny|clear|warm|no rain|soleil|beau temps)\b/.test(t)) {
     state.weather = "sunny";
     weatherSelect.value = "sunny";
     matched = true;
+  } else if (/\b(heavy rain|storm|pouring|grosse pluie|orage)\b/.test(t)) {
+    state.weather = "heavy_rain";
+    weatherSelect.value = "heavy_rain";
+    matched = true;
+  } else if (/\b(light rain|drizzle|showers|pluie légère)\b/.test(t)) {
+    state.weather = "light_rain";
+    weatherSelect.value = "light_rain";
+    matched = true;
+  } else if (/\b(cloudy|overcast|nuageux)\b/.test(t)) {
+    state.weather = "cloudy";
+    weatherSelect.value = "cloudy";
+    matched = true;
   }
 
+  // STRICT GUARDRAIL: Never make random edits on greetings or unclear speech!
   if (!matched) {
-    state.extraCovers += 10;
-    state.extraCoversNote = "Chef safety note";
+    const isGreeting = /^(hi|hello|hey|bonjour|salut|coucou|test|yo|ok|merci|thanks)\b/.test(t);
+    const curTotal = prevLines.reduce((s, l) => s + l.lineEur, 0);
+    return {
+      noMatch: true,
+      infoMessage: isGreeting
+        ? `Hi Chef Karim — your €${curTotal} order is untouched. Tell me a specific kitchen update like “group of 25 just booked”, “swap cod to sea bass”, “add 2 kg bavette”, or “fridge empty on salad”.`
+        : `I didn’t change any quantities to keep your €${curTotal} order safe. Specify covers (“+20 guests” / “15 cancelled”), an ingredient (“add 2 kg bavette” / “swap cod to sea bass”), fridge stock (“empty on salad”), or weather (“sunny tomorrow”).`
+    };
   }
 
-  // Compute EXACT before -> after diff so user sees crystal-clear proof of what changed
+  // Compute exact before -> after diff
   const nextForecast = computeForecast();
   const nextLines = computeLines(nextForecast);
   const diffPills = [];
@@ -501,15 +578,42 @@ async function handleChefCommand(rawText) {
   btn.disabled = true;
   btn.textContent = "…";
 
-  state.historyStack.push(captureSnapshot());
-  state.sent = false;
-
-  await new Promise((r) => setTimeout(r, 180));
+  const snapshotBefore = captureSnapshot();
+  await new Promise((r) => setTimeout(r, 160));
   const res = parseKitchenCommandLocally(cmd);
-  state.lastDiffPills = res.diffPills;
-  state.aiRowNotes = res.rowNotes;
-  state.lastCommandHeard = cmd;
-  state.lastCostUsd = res.costUsd;
+
+  if (res.specialAction === "undo") {
+    const snap = state.historyStack.pop();
+    if (snap) {
+      Object.assign(state, snap);
+      daySelect.value = state.day;
+      bookingsRange.value = state.bookings;
+      weatherSelect.value = state.weather;
+      eventSelect.value = state.event;
+    } else {
+      state.lastDiffPills = [];
+      state.lastInfoMessage = "Nothing to undo — you’re already on the initial forecast.";
+      state.lastCommandHeard = cmd;
+    }
+  } else if (res.specialAction === "reset") {
+    applyPreset(state.preset);
+  } else if (res.specialAction === "send") {
+    state.sent = true;
+  } else if (res.noMatch) {
+    // Do NOT push to historyStack or touch any order numbers!
+    state.lastDiffPills = [];
+    state.aiRowNotes = {};
+    state.lastInfoMessage = res.infoMessage;
+    state.lastCommandHeard = cmd;
+  } else {
+    state.historyStack.push(snapshotBefore);
+    state.sent = false;
+    state.lastInfoMessage = "";
+    state.lastDiffPills = res.diffPills;
+    state.aiRowNotes = res.rowNotes;
+    state.lastCommandHeard = cmd;
+    state.lastCostUsd = res.costUsd;
+  }
 
   renderFridgeDrawer();
   render();
@@ -597,6 +701,7 @@ function applyPreset(name) {
   state.historyStack = [];
   state.aiRowNotes = {};
   state.lastDiffPills = [];
+  state.lastInfoMessage = "";
   state.lastCommandHeard = "";
   state.sent = false;
 

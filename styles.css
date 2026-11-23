@@ -823,6 +823,21 @@ body {
   gap: 10px;
 }
 
+.ai-diff-card.info-mode {
+  background: rgba(59, 130, 246, 0.09);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.ai-diff-card.info-mode .ai-spark {
+  color: #93c5fd;
+}
+
+.ai-info-msg {
+  font-size: 12.5px;
+  color: #dbeafe;
+  line-height: 1.45;
+}
+
 .ai-diff-top {
   display: flex;
   align-items: center;
