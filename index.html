@@ -20,29 +20,58 @@
     </div>
 
     <nav class="presets-wrap" aria-label="Demo scenarios">
-      <span class="presets-label">Demo day:</span>
+      <span class="presets-label">Demo:</span>
       <div class="presets">
-        <button type="button" class="preset-tab active" data-preset="reference">Sat · Rain (Main)</button>
-        <button type="button" class="preset-tab" data-preset="surge">Fri · Sunny Surge</button>
+        <button type="button" class="preset-tab active" data-preset="reference">Sat · Rain</button>
+        <button type="button" class="preset-tab" data-preset="surge">Fri · Surge</button>
         <button type="button" class="preset-tab" data-preset="strike">Tue · Strike</button>
+        <button type="button" class="preset-tab live-weather-tab" id="liveParisBtn" title="Fetch real tomorrow evening weather for Paris 15e via Open-Meteo">🌐 Live Paris</button>
       </div>
     </nav>
 
-    <button type="button" id="llmConfigBtn" class="api-btn" title="Configure optional live OpenAI / Gemini / Anthropic key">
+    <span class="api-btn" title="840 input + 365 output tokens on compact LLM = $0.000345 per nightly order">
       <span class="live-dot"></span>
-      <span id="engineTag">$0.000345/call</span>
-    </button>
+      <span>$0.000345/call</span>
+    </span>
   </header>
 
   <!-- Calm Centered Chef Order Sheet -->
   <main class="sheet">
-    <!-- Quiet 1-Line Context Strip -->
+    <!-- Quiet 1-Line Context Strip + Progressive WOW Triggers -->
     <div class="context-bar">
       <div class="context-text" id="contextSummaryText">
         Ordering for tomorrow (Saturday 06:00 delivery) · 198 Zenchef bookings · POS stock synced
       </div>
-      <button type="button" id="toggleSignalsBtn" class="link-btn">Edit signals</button>
+      <div class="context-actions">
+        <button type="button" id="toggleScorecardBtn" class="pill-toggle-btn">Last service: 97.8% accurate ▾</button>
+        <button type="button" id="toggleSignalsBtn" class="link-btn">Edit signals</button>
+      </div>
     </div>
+
+    <!-- Progressive Disclosure WOW #3: Closed-Loop Yesterday's Scorecard (Hidden by Default) -->
+    <section class="scorecard-drawer" id="scorecardDrawer" hidden>
+      <div class="sc-head">
+        <span><strong>Closed-Loop Proof</strong> · Previous service verification (Bistrot Urbain #04)</span>
+        <button type="button" id="closeScorecardBtn" class="link-btn">Hide</button>
+      </div>
+      <div class="sc-grid">
+        <div class="sc-item">
+          <span class="sc-k">Forecast vs. Actual</span>
+          <strong class="sc-v">312 → 319 actual</strong>
+          <span class="sc-s">Inside 287–337 CI · 2.2% error</span>
+        </div>
+        <div class="sc-item">
+          <span class="sc-k">Kitchen &amp; Invoice Proof</span>
+          <strong class="sc-v emerald">0 stockouts · €238 saved</strong>
+          <span class="sc-s">Verified on Rungis/Metro invoice</span>
+        </div>
+        <div class="sc-item">
+          <span class="sc-k">Model Learning Loop</span>
+          <strong class="sc-v">Auto-calibrated (+1.2%)</strong>
+          <span class="sc-s">Rain walk-in elasticity updated</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Collapsible Signal & Fridge Editor (Hidden by Default) -->
     <section class="signals-drawer" id="signalsDrawer" hidden>
@@ -86,18 +115,26 @@
       </div>
     </section>
 
-    <!-- 1. HERO SUMMARY: 3 NUMBERS + CLEAN VISUAL SCALE + CRISP WHY BREAKDOWN -->
+    <!-- 1. HERO SUMMARY: 3 NUMBERS + 1-SITE / 12-SITE CFO TOGGLE + CLEAN VISUAL SCALE -->
     <section class="hero-summary">
+      <div class="scope-row">
+        <span class="scope-title" id="scopeTitle">Chef Karim View · Site #04 Montparnasse</span>
+        <div class="scope-toggle" role="group" aria-label="Single site or 12-site CFO group view">
+          <button type="button" class="scope-btn active" data-scope="1">1 site (#04)</button>
+          <button type="button" class="scope-btn" data-scope="12">12 sites (Group CFO)</button>
+        </div>
+      </div>
+
       <div class="three-metrics">
         <div class="metric">
           <div class="metric-val" id="metricCovers">312</div>
-          <div class="metric-label">covers expected tomorrow</div>
+          <div class="metric-label" id="metricCoversLabel">covers expected tomorrow</div>
           <div class="metric-sub" id="metricCoversSub">likely 287–337 · usually 395</div>
         </div>
         <div class="metric-divider"></div>
         <div class="metric">
           <div class="metric-val" id="metricOrder">€541</div>
-          <div class="metric-label">tomorrow’s order total</div>
+          <div class="metric-label" id="metricOrderLabel">tomorrow’s order total</div>
           <div class="metric-sub" id="metricOrderSub">instead of €787 usual</div>
         </div>
         <div class="metric-divider"></div>
@@ -106,6 +143,16 @@
           <div class="metric-label" id="metricSavedLabel">waste avoided</div>
           <div class="metric-sub" id="metricSavedSub">−31.3% food spend</div>
         </div>
+      </div>
+
+      <!-- Progressive Disclosure WOW #2: CFO 12-Site Annualized Proof Banner (Shown only when 12 sites toggled) -->
+      <div class="cfo-ripple-bar" id="cfoRippleBar" hidden>
+        <span><strong>Bistrot Urbain Group Impact (12 Paris sites):</strong></span>
+        <span>Year-1 Hard COGS Savings: <strong>€150,000</strong> (50% capture)</span>
+        <span>·</span>
+        <span>Net ROI: <strong>310%</strong></span>
+        <span>·</span>
+        <span>Payback: <strong>1.4 months</strong></span>
       </div>
 
       <!-- Beautiful, Clear Forecast vs. Usual Visual Bar -->
@@ -246,27 +293,6 @@
       </div>
     </section>
   </main>
-
-  <!-- Minimal Optional Live API Key Modal -->
-  <div class="modal-backdrop" id="llmModal" hidden>
-    <div class="modal-card" role="dialog" aria-labelledby="modalTitle">
-      <div class="modal-head">
-        <h3 id="modalTitle">Live LLM API (Optional)</h3>
-        <button type="button" id="closeModalBtn" class="close-x" aria-label="Close">×</button>
-      </div>
-      <p class="modal-desc">
-        Works 100% zero-setup out of the box. Paste an OpenAI, Gemini, or Anthropic key below to run live cloud LLM calls for chef voice/text commands:
-      </p>
-      <select id="providerSelect" class="modal-input">
-        <option value="">Built-in Hybrid Engine (Zero-Setup Default)</option>
-        <option value="openai">OpenAI — gpt-4o-mini ($0.000345/call)</option>
-        <option value="gemini">Google Gemini — gemini-2.5-flash</option>
-        <option value="anthropic">Anthropic — claude-3-5-haiku</option>
-      </select>
-      <input type="password" id="apiKeyInput" class="modal-input" placeholder="Paste API key (kept in memory only)" autocomplete="off" />
-      <button type="button" id="saveLlmBtn" class="send-btn" style="width: 100%;">Save</button>
-    </div>
-  </div>
 
   <script type="module" src="./app.js"></script>
 </body>

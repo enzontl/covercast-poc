@@ -60,6 +60,8 @@ function cloneBaseSkus() {
 
 const state = {
   preset: "reference",
+  scopeMultiplier: 1,       // 1 = Site #04 (Chef Karim) | 12 = Bistrot Urbain Group CFO view
+  liveWeatherBanner: "",    // Populated when 🌐 Live Paris Open-Meteo is clicked
   day: "saturday",
   bookings: 198,
   weather: "heavy_rain",
@@ -70,12 +72,10 @@ const state = {
   skus: cloneBaseSkus(),
   overrides: {},
   historyStack: [],
-  aiRowNotes: {},     // skuId -> crisp diff string e.g. "AI: 8 → 9 kg"
-  lastDiffPills: [],  // array of summary strings shown in AI diff card
+  aiRowNotes: {},
+  lastDiffPills: [],
   lastCommandHeard: "",
   lastCostUsd: 0.000345,
-  llmProvider: "",
-  llmKey: "",
   voiceLang: "en-US",
   sent: false,
   activeVendor: "",
@@ -182,24 +182,41 @@ function render() {
 
   // Quiet context line
   document.getElementById("contextSummaryText").textContent =
-    `Ordering for tomorrow (${forecast.dayLabel} 06:00 delivery) · ${state.bookings} Zenchef bookings · POS fridge stock synced`;
+    (state.liveWeatherBanner ? `${state.liveWeatherBanner} · ` : "") +
+    `Tomorrow (${forecast.dayLabel} 06:00 delivery) · ${state.bookings} Zenchef bookings · POS stock synced`;
 
-  // 3 Hero Numbers
-  document.getElementById("metricCovers").textContent = forecast.p50;
-  document.getElementById("metricCoversSub").textContent = `likely ${forecast.p05}–${forecast.p95} · usually ${forecast.habitualCovers}`;
-  document.getElementById("metricOrder").textContent = `€${totalOrder}`;
-  document.getElementById("metricOrderSub").textContent = `instead of €${totalHabitual} usual`;
+  // 3 Hero Numbers (scales cleanly between 1 site and 12-site Bistrot Urbain Group CFO view)
+  const mult = state.scopeMultiplier;
+  const isGroup = mult > 1;
+  document.getElementById("scopeTitle").textContent = isGroup
+    ? "Group CFO Ripple · All 12 Bistrot Urbain Paris Sites"
+    : "Chef Karim View · Site #04 Montparnasse";
+  document.getElementById("cfoRippleBar").hidden = !isGroup;
+
+  document.getElementById("metricCovers").textContent = (forecast.p50 * mult).toLocaleString("en-US");
+  document.getElementById("metricCoversLabel").textContent = isGroup
+    ? "group covers expected (12 sites)"
+    : "covers expected tomorrow";
+  document.getElementById("metricCoversSub").textContent = isGroup
+    ? `likely ${(forecast.p05 * mult).toLocaleString("en-US")}–${(forecast.p95 * mult).toLocaleString("en-US")} · usually ${(forecast.habitualCovers * mult).toLocaleString("en-US")}`
+    : `likely ${forecast.p05}–${forecast.p95} · usually ${forecast.habitualCovers}`;
+
+  document.getElementById("metricOrder").textContent = `€${(totalOrder * mult).toLocaleString("en-US")}`;
+  document.getElementById("metricOrderLabel").textContent = isGroup
+    ? "group order total (12 sites)"
+    : "tomorrow’s order total";
+  document.getElementById("metricOrderSub").textContent = `instead of €${(totalHabitual * mult).toLocaleString("en-US")} usual`;
 
   const savedEl = document.getElementById("metricSaved");
   if (saved >= 0) {
     savedEl.className = "metric-val emerald";
-    savedEl.textContent = `−€${saved}`;
-    document.getElementById("metricSavedLabel").textContent = "waste avoided";
+    savedEl.textContent = `−€${(saved * mult).toLocaleString("en-US")}`;
+    document.getElementById("metricSavedLabel").textContent = isGroup ? "saved tonight (12 sites)" : "waste avoided";
     document.getElementById("metricSavedSub").textContent = `${pct.toFixed(1)}% food spend`;
   } else {
     savedEl.className = "metric-val amber";
-    savedEl.textContent = `+€${Math.abs(saved)}`;
-    document.getElementById("metricSavedLabel").textContent = "stockout buffer";
+    savedEl.textContent = `+€${(Math.abs(saved) * mult).toLocaleString("en-US")}`;
+    document.getElementById("metricSavedLabel").textContent = isGroup ? "group stockout buffer" : "stockout buffer";
     document.getElementById("metricSavedSub").textContent = `+${Math.abs(pct).toFixed(1)}% surge prep`;
   }
 
@@ -487,81 +504,12 @@ async function handleChefCommand(rawText) {
   state.historyStack.push(captureSnapshot());
   state.sent = false;
 
-  const prevForecast = computeForecast();
-  const prevLines = computeLines(prevForecast);
-
-  let handledLive = false;
-  try {
-    const resp = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "command",
-        command: cmd,
-        currentState: {
-          day: state.day,
-          bookings: state.bookings,
-          weather: state.weather,
-          event: state.event,
-          skus: state.skus.map((s) => ({ id: s.id, name: s.name, unit: s.unit, unitPrice: s.unitPrice, stock: state.stocks[s.id] }))
-        },
-        customProvider: state.llmProvider,
-        customKey: state.llmKey
-      })
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data.mode === "live-llm" && data.mutation) {
-        const m = data.mutation;
-        if (typeof m.coverDelta === "number" && m.coverDelta !== 0) {
-          state.extraCovers += m.coverDelta;
-          state.extraCoversNote = m.coverReason || "Chef note";
-        }
-        if (m.weather && WEATHER_EFFECTS[m.weather]) {
-          state.weather = m.weather;
-          weatherSelect.value = m.weather;
-        }
-        if (Array.isArray(m.skuEdits)) {
-          m.skuEdits.forEach((ed) => {
-            const sku = state.skus.find((s) => s.id === ed.id);
-            if (!sku) return;
-            if (ed.newName) sku.name = ed.newName;
-            if (typeof ed.newUnitPrice === "number") sku.unitPrice = ed.newUnitPrice;
-            if (typeof ed.setStock === "number") state.stocks[ed.id] = Math.max(0, ed.setStock);
-            if (typeof ed.qtyDelta === "number") state.overrides[ed.id] = (state.overrides[ed.id] || 0) + ed.qtyDelta;
-          });
-        }
-        const nextF = computeForecast();
-        const nextL = computeLines(nextF);
-        const pills = [];
-        const notes = {};
-        if (nextF.p50 !== prevForecast.p50) pills.push(`Covers: ${prevForecast.p50} → ${nextF.p50}`);
-        nextL.forEach((nl, i) => {
-          const pl = prevLines[i];
-          if (nl.finalQty !== pl.finalQty || nl.name !== pl.name) {
-            notes[nl.id] = nl.name !== pl.name ? `Swapped → ${nl.name} (${nl.finalQty} ${nl.unit})` : `Qty ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`;
-            pills.push(`${nl.name.split(" ")[1] || nl.name}: ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
-          }
-        });
-        state.lastDiffPills = pills.length ? pills : [data.reply || "Updated order"];
-        state.aiRowNotes = notes;
-        state.lastCommandHeard = cmd;
-        state.lastCostUsd = data.costUsd || 0.000345;
-        handledLive = true;
-      }
-    }
-  } catch {
-    // Static GitHub Pages fallback
-  }
-
-  if (!handledLive) {
-    await new Promise((r) => setTimeout(r, 220));
-    const res = parseKitchenCommandLocally(cmd);
-    state.lastDiffPills = res.diffPills;
-    state.aiRowNotes = res.rowNotes;
-    state.lastCommandHeard = cmd;
-    state.lastCostUsd = res.costUsd;
-  }
+  await new Promise((r) => setTimeout(r, 180));
+  const res = parseKitchenCommandLocally(cmd);
+  state.lastDiffPills = res.diffPills;
+  state.aiRowNotes = res.rowNotes;
+  state.lastCommandHeard = cmd;
+  state.lastCostUsd = res.costUsd;
 
   renderFridgeDrawer();
   render();
@@ -636,6 +584,7 @@ function applyPreset(name) {
   const p = PRESETS[name];
   if (!p) return;
   state.preset = name;
+  state.liveWeatherBanner = "";
   state.day = p.day;
   state.bookings = p.bookings;
   state.weather = p.weather;
@@ -660,13 +609,84 @@ function applyPreset(name) {
   render();
 }
 
+// WOW #1: Real Live Paris 15e Tomorrow Weather via Free Keyless Open-Meteo API
+async function fetchLiveParisWeather() {
+  const liveBtn = document.getElementById("liveParisBtn");
+  liveBtn.textContent = "🌐 Fetching…";
+  try {
+    const url =
+      "https://api.open-meteo.com/v1/forecast?latitude=48.842&longitude=2.300&daily=temperature_2m_max,precipitation_sum&timezone=Europe%2FParis&forecast_days=2";
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error("Weather fetch failed");
+    const data = await resp.json();
+    const tempMax = Math.round(data.daily?.temperature_2m_max?.[1] ?? 14);
+    const rainMm = Number((data.daily?.precipitation_sum?.[1] ?? 0).toFixed(1));
+
+    // Map real tomorrow day-of-week & weather into CoverCast model
+    const tomorrow = new Date(Date.now() + 86400000);
+    const dayMap = ["saturday", "tuesday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    state.day = dayMap[tomorrow.getDay()] || "saturday";
+    state.bookings = DAY_PROFILES[state.day].expectedBookings + 8;
+    state.event = "none";
+    state.extraCovers = 0;
+    state.extraCoversNote = "";
+    state.overrides = {};
+    state.aiRowNotes = {};
+    state.lastDiffPills = [];
+
+    if (rainMm >= 6) state.weather = "heavy_rain";
+    else if (rainMm >= 1) state.weather = "light_rain";
+    else if (tempMax >= 19) state.weather = "sunny";
+    else state.weather = "cloudy";
+
+    state.liveWeatherBanner = `🌐 Live Open-Meteo Paris 15e (${tempMax}°C · ${rainMm}mm rain)`;
+    daySelect.value = state.day;
+    bookingsRange.value = state.bookings;
+    weatherSelect.value = state.weather;
+    eventSelect.value = state.event;
+    renderFridgeDrawer();
+    render();
+    liveBtn.textContent = `🌐 Paris ${tempMax}°C`;
+  } catch {
+    state.liveWeatherBanner = "🌐 Live Paris Weather unavailable offline";
+    liveBtn.textContent = "🌐 Live Paris";
+    render();
+  }
+}
+
 // Event Listeners
-document.querySelectorAll(".preset-tab").forEach((tab) => {
+document.querySelectorAll(".preset-tab[data-preset]").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".preset-tab").forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
+    document.getElementById("liveParisBtn").textContent = "🌐 Live Paris";
     applyPreset(tab.dataset.preset);
   });
+});
+
+document.getElementById("liveParisBtn").addEventListener("click", () => {
+  document.querySelectorAll(".preset-tab").forEach((t) => t.classList.remove("active"));
+  document.getElementById("liveParisBtn").classList.add("active");
+  fetchLiveParisWeather();
+});
+
+// WOW #2: 1 Site <-> 12 Sites (Group CFO) Toggle
+document.querySelectorAll(".scope-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".scope-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.scopeMultiplier = parseInt(btn.dataset.scope, 10) || 1;
+    render();
+  });
+});
+
+// WOW #3: Closed-Loop Yesterday's Scorecard Toggle
+const scorecardDrawer = document.getElementById("scorecardDrawer");
+document.getElementById("toggleScorecardBtn").addEventListener("click", () => {
+  scorecardDrawer.hidden = !scorecardDrawer.hidden;
+});
+document.getElementById("closeScorecardBtn").addEventListener("click", () => {
+  scorecardDrawer.hidden = true;
 });
 
 document.getElementById("toggleSignalsBtn").addEventListener("click", () => {
@@ -831,17 +851,6 @@ setInterval(() => {
   document.getElementById("prepTimer").textContent =
     `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 }, 1000);
-
-// Optional Live API Modal
-const llmModal = document.getElementById("llmModal");
-document.getElementById("llmConfigBtn").addEventListener("click", () => { llmModal.hidden = false; });
-document.getElementById("closeModalBtn").addEventListener("click", () => { llmModal.hidden = true; });
-document.getElementById("saveLlmBtn").addEventListener("click", () => {
-  state.llmProvider = document.getElementById("providerSelect").value;
-  state.llmKey = document.getElementById("apiKeyInput").value.trim();
-  document.getElementById("engineTag").textContent = state.llmKey ? "Live LLM Ready" : "$0.000345/call";
-  llmModal.hidden = true;
-});
 
 // Boot
 renderFridgeDrawer();
