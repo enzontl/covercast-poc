@@ -77,6 +77,8 @@ const state = {
   lastApplied: null,        // { heard, reflection, diffPills, costUsd }
   lastInfo: null,           // { heard, reflection }
   lastCostUsd: 0.000345,
+  claudeApiKey: sessionStorage.getItem("covercast_claude_key") || "",
+  claudeModel: sessionStorage.getItem("covercast_claude_model") || "claude-haiku-5-5",
   voiceLang: "en-US",
   sent: false,
   activeVendor: "",
@@ -714,16 +716,233 @@ function cancelPendingProposal() {
   render();
 }
 
+// Pricing per 1M tokens (USD) for live cost telemetry display
+const CLAUDE_PRICING = {
+  "claude-haiku-5-5":  { inPerM: 0.80,  outPerM: 4.00,  label: "Haiku 5.5" },
+  "claude-sonnet-5-5": { inPerM: 3.00,  outPerM: 15.00, label: "Sonnet 5.5" },
+  "claude-opus-5-5":   { inPerM: 15.00, outPerM: 75.00, label: "Opus 5.5" },
+  "claude-fable-5-2":  { inPerM: 15.00, outPerM: 75.00, label: "Fable 5.2" }
+};
+
+function getClaudeShortLabel(modelId) {
+  return CLAUDE_PRICING[modelId]?.label || modelId;
+}
+
+function updateClaudeBadgeUI() {
+  const btn = document.getElementById("claudeConfigBtn");
+  const txt = document.getElementById("claudeStatusText");
+  if (state.claudeApiKey) {
+    btn.classList.add("connected");
+    txt.textContent = `Claude ${getClaudeShortLabel(state.claudeModel)} · Live`;
+  } else {
+    btn.classList.remove("connected");
+    txt.textContent = "Claude API · Connect";
+  }
+}
+
+// Direct Browser Call to Anthropic Messages API (Works natively on GitHub Pages via official CORS header!)
+async function callClaudeLive(rawText) {
+  const liveSnapshot = captureSnapshot(state);
+  const draftBase = state.pendingProposal ? captureSnapshot(state.pendingProposal.draftState) : captureSnapshot(state);
+  const baseForecast = computeForecastFor(liveSnapshot);
+  const baseLines = computeLinesFor(liveSnapshot, baseForecast);
+  const curDraftForecast = computeForecastFor(draftBase);
+  const curDraftLines = computeLinesFor(draftBase, curDraftForecast);
+
+  const systemPrompt = `You are CoverCast, a calm, hyper-practical kitchen order copilot for Head Chef Karim at Bistrot Urbain #04 (Montparnasse, Paris).
+CRITICAL RULES:
+1. NEVER do order total arithmetic — our deterministic engine computes exact quantities and euros from your structured mutation.
+2. NEVER make random changes on greetings ("Hi", "Bonjour") or unclear comments — return action "info" with a warm, brief reply instead.
+3. If there is a pendingProposal open:
+   - If the chef confirms ("yes", "oui", "apply", "ok"), return action "confirm-yes".
+   - If the chef cancels ("no", "cancel", "non"), return action "confirm-cancel".
+   - If the chef refines it ("keep cod at 8 kg", "make it 15 people instead"), return action "propose" with the adjusted mutation.
+4. Valid SKU ids: "cod", "bavette", "buns", "mesclun", "cream", "tomatoes".
+5. Valid weather values: "heavy_rain", "light_rain", "cloudy", "sunny".
+6. Respond with STRICT JSON ONLY (no markdown fences):
+{
+  "action": "propose | info | confirm-yes | confirm-cancel | undo | reset | send",
+  "reflection": "1-2 crisp sentences of transparent kitchen reasoning",
+  "mutation": {
+    "coverDelta": 0,
+    "coverReason": "",
+    "weather": null,
+    "skuEdits": [
+      { "id": "cod", "newName": null, "newUnitPrice": null, "setStock": null, "qtyDelta": 0, "setQty": null }
+    ]
+  }
+}`;
+
+  const userPayload = {
+    chefMessage: rawText,
+    hasPendingProposal: Boolean(state.pendingProposal),
+    pendingProposalSummary: state.pendingProposal ? state.pendingProposal.diffPills : [],
+    currentForecast: { covers: curDraftForecast.p50, weather: draftBase.weather, day: draftBase.day, bookings: draftBase.bookings },
+    currentOrderLines: curDraftLines.map((l) => ({
+      id: l.id, name: l.name, unit: l.unit, unitPrice: l.unitPrice, fridgeStock: l.stock, currentQty: l.finalQty, usualQty: l.habitualQty
+    }))
+  };
+
+  const t0 = Date.now();
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": state.claudeApiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: state.claudeModel,
+      max_tokens: 550,
+      temperature: 0.1,
+      system: systemPrompt,
+      messages: [{ role: "user", content: JSON.stringify(userPayload) }]
+    })
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Claude API ${resp.status}: ${errText.slice(0, 140)}`);
+  }
+
+  const data = await resp.json();
+  const inTok = data.usage?.input_tokens || 650;
+  const outTok = data.usage?.output_tokens || 160;
+  const rate = CLAUDE_PRICING[state.claudeModel] || { inPerM: 3.0, outPerM: 15.0 };
+  const costUsd = Number(((inTok * rate.inPerM + outTok * rate.outPerM) / 1_000_000).toFixed(6));
+
+  const rawContent = data.content?.find((c) => c.type === "text")?.text || "{}";
+  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+  const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
+
+  if (parsed.action !== "propose") {
+    return {
+      action: parsed.action || "info",
+      heard: rawText,
+      reflection: parsed.reflection || "No order changes proposed.",
+      costUsd,
+      modelUsed: getClaudeShortLabel(state.claudeModel),
+      latencyMs: Date.now() - t0
+    };
+  }
+
+  // Apply Claude's structured mutation onto a non-destructive DRAFT snapshot
+  const draft = captureSnapshot(draftBase);
+  const m = parsed.mutation || {};
+  if (typeof m.coverDelta === "number" && m.coverDelta !== 0) {
+    draft.extraCovers += Math.round(m.coverDelta);
+    draft.extraCoversNote = m.coverReason || "Claude update";
+  }
+  if (m.weather && WEATHER_EFFECTS[m.weather]) {
+    draft.weather = m.weather;
+  }
+
+  // Precompute draft lines after cover/weather shift so setQty is exact
+  const midForecast = computeForecastFor(draft);
+  const midLines = computeLinesFor(draft, midForecast);
+
+  if (Array.isArray(m.skuEdits)) {
+    m.skuEdits.forEach((ed) => {
+      const sku = draft.skus.find((s) => s.id === ed.id);
+      if (!sku) return;
+      if (ed.newName) sku.name = ed.newName;
+      if (typeof ed.newUnitPrice === "number" && ed.newUnitPrice > 0) sku.unitPrice = ed.newUnitPrice;
+      if (typeof ed.setStock === "number") draft.stocks[ed.id] = Math.max(0, ed.setStock);
+    });
+  }
+
+  // Recompute recQty after stock changes, then apply qtyDelta / setQty
+  const postStockForecast = computeForecastFor(draft);
+  const postStockLines = computeLinesFor(draft, postStockForecast);
+  if (Array.isArray(m.skuEdits)) {
+    m.skuEdits.forEach((ed) => {
+      const line = postStockLines.find((l) => l.id === ed.id) || midLines.find((l) => l.id === ed.id);
+      if (!line) return;
+      if (typeof ed.setQty === "number") {
+        draft.overrides[ed.id] = Math.max(0, Math.round(ed.setQty)) - line.recQty;
+      } else if (typeof ed.qtyDelta === "number" && ed.qtyDelta !== 0) {
+        draft.overrides[ed.id] = (draft.overrides[ed.id] || 0) + Math.round(ed.qtyDelta);
+      }
+    });
+  }
+
+  // Build exact before -> after diff vs live order
+  const nextForecast = computeForecastFor(draft);
+  const nextLines = computeLinesFor(draft, nextForecast);
+  const diffPills = [];
+  const rowNotes = {};
+
+  if (nextForecast.p50 !== baseForecast.p50) {
+    diffPills.push(`Covers: ${baseForecast.p50} → ${nextForecast.p50} (${fmtSigned(nextForecast.p50 - baseForecast.p50)})`);
+  }
+  nextLines.forEach((nl, idx) => {
+    const bl = baseLines[idx];
+    const parts = [];
+    if (nl.name !== bl.name) {
+      parts.push(`Swapped → ${nl.name.split(" ").slice(0, 3).join(" ")} (€${nl.unitPrice}/${nl.unit})`);
+      diffPills.push(`Item: ${bl.name.split(" ")[1] || bl.id} → ${nl.name.split(" ").slice(0, 3).join(" ")}`);
+    }
+    if (nl.stock !== bl.stock) parts.push(`Fridge ${bl.stock.toFixed(1)} → ${nl.stock.toFixed(1)} ${nl.unit}`);
+    if (nl.finalQty !== bl.finalQty) {
+      parts.push(`Qty ${bl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+      diffPills.push(`${nl.name.split(" ")[1] || nl.name}: ${bl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+    }
+    if (parts.length > 0) rowNotes[nl.id] = parts.join(" · ");
+  });
+
+  const baseEur = baseLines.reduce((s, l) => s + l.lineEur, 0);
+  const nextEur = nextLines.reduce((s, l) => s + l.lineEur, 0);
+  if (nextEur !== baseEur) diffPills.push(`Total: €${baseEur} → €${nextEur} (${fmtSigned(nextEur - baseEur)}€)`);
+
+  if (diffPills.length === 0) {
+    return {
+      action: "info",
+      heard: rawText,
+      reflection: parsed.reflection || "Checked your note — current quantities already match.",
+      costUsd
+    };
+  }
+
+  const combinedHeard = state.pendingProposal ? `${state.pendingProposal.heard} + ${rawText}` : rawText;
+  return {
+    action: "propose",
+    proposal: {
+      draftState: draft,
+      heard: combinedHeard,
+      reflection: `[Claude ${getClaudeShortLabel(state.claudeModel)} · ${inTok + outTok} tok] ${parsed.reflection}`,
+      diffPills,
+      rowNotes,
+      costUsd
+    }
+  };
+}
+
 async function handleChefCommand(rawText) {
   const cmd = rawText.trim();
   if (!cmd) return;
 
   const btn = document.getElementById("commandSubmitBtn");
   btn.disabled = true;
-  btn.textContent = "Thinking…";
+  btn.textContent = state.claudeApiKey ? `Claude…` : "Thinking…";
 
-  await new Promise((r) => setTimeout(r, 260));
-  const res = buildReflectiveProposal(cmd);
+  let res;
+  if (state.claudeApiKey) {
+    try {
+      res = await callClaudeLive(cmd);
+    } catch (err) {
+      // Graceful fallback to built-in reflective engine + visible note
+      res = buildReflectiveProposal(cmd);
+      if (res.proposal) {
+        res.proposal.reflection = `(Claude API error — used local fallback: ${err.message}) ` + res.proposal.reflection;
+      } else if (res.reflection) {
+        res.reflection = `(Claude API error: ${err.message}) ` + res.reflection;
+      }
+    }
+  } else {
+    await new Promise((r) => setTimeout(r, 240));
+    res = buildReflectiveProposal(cmd);
+  }
 
   if (res.action === "confirm-yes") {
     commitPendingProposal();
@@ -763,7 +982,6 @@ async function handleChefCommand(rawText) {
       state.lastApplied = null;
       state.lastInfo = { heard: res.heard, reflection: res.reflection };
     } else {
-      // Keep pending proposal open and gently remind user to confirm, refine, or cancel
       state.pendingProposal.reflection = `${res.reflection} (Your pending proposal below is still waiting—say “yes” to apply, “cancel” to discard, or specify a tweak.)`;
     }
     render();
@@ -1118,6 +1336,72 @@ setInterval(() => {
     `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 }, 1000);
 
+// Claude API Key Modal Wiring (Haiku, Sonnet, Opus, Fable + Custom Model ID)
+const claudeModal = document.getElementById("claudeModal");
+const claudeModelSelect = document.getElementById("claudeModelSelect");
+const customModelWrap = document.getElementById("customModelWrap");
+const customModelInput = document.getElementById("customModelInput");
+const claudeKeyInput = document.getElementById("claudeKeyInput");
+const claudeModalStatus = document.getElementById("claudeModalStatus");
+const disconnectClaudeBtn = document.getElementById("disconnectClaudeBtn");
+
+document.getElementById("claudeConfigBtn").addEventListener("click", () => {
+  claudeKeyInput.value = state.claudeApiKey;
+  const knownModels = ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5-2"];
+  if (knownModels.includes(state.claudeModel)) {
+    claudeModelSelect.value = state.claudeModel;
+    customModelWrap.hidden = true;
+  } else {
+    claudeModelSelect.value = "custom";
+    customModelWrap.hidden = false;
+    customModelInput.value = state.claudeModel;
+  }
+  disconnectClaudeBtn.hidden = !state.claudeApiKey;
+  claudeModalStatus.hidden = true;
+  claudeModal.hidden = false;
+});
+
+claudeModelSelect.addEventListener("change", () => {
+  customModelWrap.hidden = claudeModelSelect.value !== "custom";
+});
+
+document.getElementById("closeClaudeModalBtn").addEventListener("click", () => {
+  claudeModal.hidden = true;
+});
+
+disconnectClaudeBtn.addEventListener("click", () => {
+  state.claudeApiKey = "";
+  sessionStorage.removeItem("covercast_claude_key");
+  updateClaudeBadgeUI();
+  claudeModal.hidden = true;
+});
+
+document.getElementById("saveClaudeBtn").addEventListener("click", () => {
+  const key = claudeKeyInput.value.trim();
+  const model = claudeModelSelect.value === "custom" ? customModelInput.value.trim() : claudeModelSelect.value;
+
+  if (!key) {
+    claudeModalStatus.className = "modal-status";
+    claudeModalStatus.textContent = "Please paste your Anthropic API key (starts with sk-ant-…).";
+    claudeModalStatus.hidden = false;
+    return;
+  }
+  if (!model) {
+    claudeModalStatus.className = "modal-status";
+    claudeModalStatus.textContent = "Please select or enter a Claude model ID.";
+    claudeModalStatus.hidden = false;
+    return;
+  }
+
+  state.claudeApiKey = key;
+  state.claudeModel = model;
+  sessionStorage.setItem("covercast_claude_key", key);
+  sessionStorage.setItem("covercast_claude_model", model);
+  updateClaudeBadgeUI();
+  claudeModal.hidden = true;
+});
+
 // Boot
+updateClaudeBadgeUI();
 renderFridgeDrawer();
 render();

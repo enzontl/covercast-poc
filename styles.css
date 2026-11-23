@@ -147,8 +147,51 @@ body {
   color: var(--text-muted);
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
-  padding: 5px 9px;
+  padding: 5px 10px;
   border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.api-btn:hover {
+  border-color: var(--border-strong);
+  color: #ffffff;
+}
+
+.api-btn.connected {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(52, 211, 153, 0.45);
+  color: var(--emerald-bright);
+}
+
+.modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.modal-status {
+  font-size: 12px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fda4af;
+}
+
+.modal-status.ok {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
+}
+
+.modal-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .api-btn:hover {

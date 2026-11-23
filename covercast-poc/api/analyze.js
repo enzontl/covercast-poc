@@ -98,12 +98,13 @@ Valid weather values if changed: "heavy_rain", "light_rain", "cloudy", "sunny".`
     }
 
     if (provider === "anthropic") {
+      const modelId = body.customModel || "claude-haiku-5-5";
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model: "claude-3-5-haiku-latest",
-          max_tokens: 400,
+          model: modelId,
+          max_tokens: 550,
           temperature: 0.1,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }]
@@ -119,6 +120,7 @@ Valid weather values if changed: "heavy_rain", "light_rain", "cloudy", "sunny".`
       const parsed = JSON.parse(match ? match[0] : raw);
       return res.status(200).json({
         mode: "live-llm",
+        model: modelId,
         latencyMs: Date.now() - t0,
         costUsd: Number(costUsd.toFixed(6)),
         ...parsed
