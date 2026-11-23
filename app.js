@@ -73,9 +73,9 @@ const state = {
   overrides: {},
   historyStack: [],
   aiRowNotes: {},
-  lastDiffPills: [],
-  lastInfoMessage: "",      // Neutral guardrail reply when no order mutation was triggered
-  lastCommandHeard: "",
+  pendingProposal: null,    // { draftState, heard, reflection, diffPills, rowNotes, costUsd }
+  lastApplied: null,        // { heard, reflection, diffPills, costUsd }
+  lastInfo: null,           // { heard, reflection }
   lastCostUsd: 0.000345,
   voiceLang: "en-US",
   sent: false,
@@ -278,27 +278,51 @@ function render() {
       : `${w.phrase}${ev.phrase ? ` while ${ev.phrase}` : ""} — so CoverCast adds +€${Math.abs(saved)} to prevent mid-service stockouts.`;
   document.getElementById("whyLine").textContent = whySentence;
 
-  // AI Diff Card (Shows exact changes + Undo, OR safe guardrail reply if no order edit was detected)
+  // Reflective AI Card (3 clean states: Pending Proposal [Yes/Cancel/Refine] | Applied [Undo] | Info Reflection)
   const undoBtn = document.getElementById("undoCmdBtn");
-  const sparkEl = aiDiffCard.querySelector(".ai-spark");
-  if (state.lastDiffPills.length > 0) {
+  const badgeEl = document.getElementById("aiCardBadge");
+  const heardEl = document.getElementById("aiHeardQuote");
+  const reflEl = document.getElementById("aiReflectionText");
+  const pillsEl = document.getElementById("aiDiffPills");
+  const confirmBar = document.getElementById("aiConfirmBar");
+  const refineHint = document.getElementById("aiRefineHint");
+
+  aiDiffCard.classList.remove("proposal-mode", "info-mode");
+
+  if (state.pendingProposal) {
+    const p = state.pendingProposal;
     aiDiffCard.hidden = false;
-    aiDiffCard.classList.remove("info-mode");
-    sparkEl.textContent = "✦ AI updated your order";
-    document.getElementById("aiHeardQuote").textContent = `from “${state.lastCommandHeard}”`;
-    document.getElementById("aiCostMini").textContent = `$${state.lastCostUsd.toFixed(6)}`;
-    undoBtn.hidden = false;
-    document.getElementById("aiDiffPills").innerHTML = state.lastDiffPills
-      .map((p) => `<span class="diff-pill">${p}</span>`)
-      .join("");
-  } else if (state.lastInfoMessage) {
+    aiDiffCard.classList.add("proposal-mode");
+    badgeEl.textContent = "🧠 AI Reflection · Awaiting your OK";
+    heardEl.textContent = `heard “${p.heard}”`;
+    document.getElementById("aiCostMini").textContent = `$${p.costUsd.toFixed(6)}`;
+    reflEl.textContent = p.reflection;
+    pillsEl.innerHTML = p.diffPills.map((txt) => `<span class="diff-pill">${txt}</span>`).join("");
+    undoBtn.hidden = true;
+    confirmBar.hidden = false;
+    refineHint.hidden = false;
+  } else if (state.lastApplied) {
+    const a = state.lastApplied;
+    aiDiffCard.hidden = false;
+    badgeEl.textContent = "✓ Confirmed & Applied";
+    heardEl.textContent = `from “${a.heard}”`;
+    document.getElementById("aiCostMini").textContent = `$${a.costUsd.toFixed(6)}`;
+    reflEl.textContent = a.reflection;
+    pillsEl.innerHTML = a.diffPills.map((txt) => `<span class="diff-pill">${txt}</span>`).join("");
+    undoBtn.hidden = state.historyStack.length === 0;
+    confirmBar.hidden = true;
+    refineHint.hidden = true;
+  } else if (state.lastInfo) {
     aiDiffCard.hidden = false;
     aiDiffCard.classList.add("info-mode");
-    sparkEl.textContent = "🛡️ Guardrail · No order changes made";
-    document.getElementById("aiHeardQuote").textContent = state.lastCommandHeard ? `heard “${state.lastCommandHeard}”` : "";
-    document.getElementById("aiCostMini").textContent = "$0.000000";
+    badgeEl.textContent = "🧠 AI Reflection · No changes proposed";
+    heardEl.textContent = state.lastInfo.heard ? `heard “${state.lastInfo.heard}”` : "";
+    document.getElementById("aiCostMini").textContent = "$0.000345";
+    reflEl.textContent = state.lastInfo.reflection;
+    pillsEl.innerHTML = "";
     undoBtn.hidden = true;
-    document.getElementById("aiDiffPills").innerHTML = `<div class="ai-info-msg">${state.lastInfoMessage}</div>`;
+    confirmBar.hidden = true;
+    refineHint.hidden = true;
   } else {
     aiDiffCard.hidden = true;
   }
@@ -370,23 +394,45 @@ function render() {
   if (state.sent) renderSentEmails(forecast, lines, totalOrder, saved);
 }
 
-// Snapshot for clean multi-step Undo
-function captureSnapshot() {
+// Snapshot helpers (works on both live state and proposed draft state)
+function captureSnapshot(src = state) {
   return {
-    day: state.day,
-    bookings: state.bookings,
-    weather: state.weather,
-    event: state.event,
-    extraCovers: state.extraCovers,
-    extraCoversNote: state.extraCoversNote,
-    stocks: { ...state.stocks },
-    skus: state.skus.map((s) => ({ ...s })),
-    overrides: { ...state.overrides },
-    aiRowNotes: { ...state.aiRowNotes },
-    lastDiffPills: [...state.lastDiffPills],
-    lastInfoMessage: "",
-    lastCommandHeard: state.lastCommandHeard
+    day: src.day,
+    bookings: src.bookings,
+    weather: src.weather,
+    event: src.event,
+    extraCovers: src.extraCovers,
+    extraCoversNote: src.extraCoversNote,
+    stocks: { ...src.stocks },
+    skus: src.skus.map((s) => ({ ...s })),
+    overrides: { ...src.overrides }
   };
+}
+
+function computeForecastFor(s) {
+  const prof = DAY_PROFILES[s.day];
+  const weather = WEATHER_EFFECTS[s.weather];
+  const ev = EVENT_EFFECTS[s.event];
+  const bookingDelta = Math.round(s.bookings - prof.expectedBookings);
+  const weatherDelta = Math.round(prof.baseCovers * weather.factor);
+  const eventDelta = ev.coversDelta;
+  const p50 = Math.max(60, prof.baseCovers + bookingDelta + weatherDelta + eventDelta + s.extraCovers);
+  const halfWidth = prof.ciBase + weather.ciAdd + ev.ciAdd;
+  return { p50, p05: Math.max(45, p50 - halfWidth), p95: p50 + halfWidth, habitualCovers: prof.habitualCovers };
+}
+
+function computeLinesFor(s, forecast) {
+  const habitualScale = forecast.habitualCovers / DAY_PROFILES.saturday.habitualCovers;
+  return s.skus.map((sku) => {
+    const grossNeed = Number((forecast.p50 * sku.ratePerCover).toFixed(1));
+    const stock = s.stocks[sku.id] ?? sku.defaultStock;
+    const recQty = Math.max(0, Math.ceil(Number((grossNeed - stock).toFixed(2))));
+    const overrideDelta = s.overrides[sku.id] || 0;
+    const finalQty = Math.max(0, recQty + overrideDelta);
+    const habitualQty = s.day === "saturday" ? sku.habitualSat : Math.max(1, Math.round(sku.habitualSat * habitualScale));
+    const lineEur = finalQty * sku.unitPrice;
+    return { ...sku, stock, recQty, finalQty, habitualQty, lineEur };
+  });
 }
 
 const SKU_KEYWORDS = [
@@ -402,76 +448,115 @@ function findMentionedSkus(text) {
   return SKU_KEYWORDS.filter((item) => item.keys.some((k) => text.includes(k))).map((i) => i.id);
 }
 
-function parseKitchenCommandLocally(rawText) {
+// Builds a non-destructive DRAFT proposal on top of a base snapshot (never mutates live order until Chef says YES!)
+function buildReflectiveProposal(rawText) {
   const t = rawText.toLowerCase().trim();
-  const prevForecast = computeForecast();
-  const prevLines = computeLines(prevForecast);
 
-  // Guardrail A: Voice/text shortcuts for Undo, Reset, or Send
-  if (/^(undo|annule|annuler|revert|cancel last)\b/.test(t)) {
-    return { specialAction: "undo" };
+  // Conversational confirmation / cancel when a proposal is already open
+  if (state.pendingProposal) {
+    if (/^(yes|yeah|yep|ok|okay|sure|apply|confirm|do it|go ahead|oui|ouais|d'accord|vas-y|valide|applique)\b/.test(t)) {
+      return { action: "confirm-yes" };
+    }
+    if (/^(no|nope|cancel|stop|nevermind|forget it|non|annule|annuler|laisse tomber)\b/.test(t) && t.split(/\s+/).length <= 3) {
+      return { action: "confirm-cancel" };
+    }
   }
-  if (/^(reset|réinitialise|remettre)\b/.test(t)) {
-    return { specialAction: "reset" };
-  }
-  if (/\b(send order|send email|approve order|envoie|envoyer la commande|valide la commande)\b/.test(t)) {
-    return { specialAction: "send" };
-  }
+
+  if (/^(undo|annule|annuler|revert)\b/.test(t)) return { action: "undo" };
+  if (/^(reset|réinitialise|remettre)\b/.test(t)) return { action: "reset" };
+  if (/\b(send order|send email|approve order|envoie|envoyer la commande)\b/.test(t)) return { action: "send" };
+
+  // Start from current pending draft if refining, otherwise from current live order
+  const liveSnapshot = captureSnapshot(state);
+  const draft = state.pendingProposal ? captureSnapshot(state.pendingProposal.draftState) : captureSnapshot(state);
+  const baseForecast = computeForecastFor(liveSnapshot);
+  const baseLines = computeLinesFor(liveSnapshot, baseForecast);
+  const curDraftForecast = computeForecastFor(draft);
+  const curDraftLines = computeLinesFor(draft, curDraftForecast);
 
   let matched = false;
+  const reasoningParts = [];
 
-  // 1. Fish / Cod swap -> Sea Bass or Salmon
+  // 1. Keep / exclude an item during refinement ("keep cod at 8", "don't change cod", "leave bavette")
+  const mentionedSkus = findMentionedSkus(t);
+  if (state.pendingProposal && mentionedSkus.length > 0 && /\b(keep|leave|don'?t change|garder|garde|laisse|touche pas)\b/.test(t)) {
+    const exactNum = t.match(/\b(\d{1,2})\b/);
+    mentionedSkus.forEach((id) => {
+      const liveLine = baseLines.find((l) => l.id === id);
+      const draftLine = curDraftLines.find((l) => l.id === id);
+      if (liveLine && draftLine) {
+        const target = exactNum ? parseInt(exactNum[1], 10) : liveLine.finalQty;
+        draft.overrides[id] = target - draftLine.recQty;
+        matched = true;
+        reasoningParts.push(`keeping ${liveLine.name.split(" ")[1] || id} locked at ${target} ${liveLine.unit} as requested`);
+      }
+    });
+  }
+
+  // 2. Fish / Cod swap -> Sea Bass or Salmon
   if (
+    !matched &&
     (t.includes("cod") || t.includes("cabillaud") || t.includes("fish") || t.includes("poisson")) &&
     (t.includes("sea bass") || t.includes("bar") || t.includes("salmon") || t.includes("saumon") || t.includes("swap") || t.includes("replace") || t.includes("remplace") || t.includes("out of") || t.includes("plus de"))
   ) {
     const isSalmon = t.includes("salmon") || t.includes("saumon");
-    const codSku = state.skus.find((s) => s.id === "cod");
+    const codSku = draft.skus.find((s) => s.id === "cod");
     if (codSku) {
       codSku.name = isSalmon ? "Fresh Scottish Salmon Fillet" : "Wild Sea Bass Fillet (Bar de ligne)";
       codSku.unitPrice = isSalmon ? 21 : 23;
-      state.stocks.cod = 0;
+      draft.stocks.cod = 0;
       matched = true;
+      reasoningParts.push(`swapping Cod for ${codSku.name} (€${codSku.unitPrice}/kg) and zeroing old Cod fridge stock`);
     }
   }
 
-  // 2. Group booking OR cancellation ("group of 25", "15 people cancelled", "+20 covers", "-10 guests")
-  const cancelMatch = t.match(/(?:cancel|cancelled|canceled|annul\w*|drop|lost)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
-                      t.match(/\b(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\s*(?:cancel|cancelled|canceled|annul\w*)/);
+  // 3. Group booking / refinement ("make it 15 people", "group of 25", "15 cancelled")
+  const cancelMatch = t.match(/(?:cancel\w*|annul\w*|drop|lost)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
+                      t.match(/\b(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\s*(?:cancel\w*|annul\w*)/);
+  const refineGroupMatch = state.pendingProposal && t.match(/(?:make it|instead|plutôt|actually)\s*(?:of|for)?\s*(\d{1,3})\b/);
   const groupMatch = t.match(/(?:group|party|table|birthday|anniversaire|groupe|extra|booked|réserv\w*)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
                      t.match(/(?:\+|add|plus)\s*(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\b/) ||
                      t.match(/\b(\d{1,3})\s*(?:more|extra)?\s*(?:people|guests|covers|couverts|personnes|pax)\b/);
 
-  if (cancelMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
+  if (!matched && cancelMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
     const n = Math.min(120, Math.max(2, parseInt(cancelMatch[1], 10)));
-    state.extraCovers -= n;
-    state.extraCoversNote = "Group cancellation";
+    draft.extraCovers = liveSnapshot.extraCovers - n;
+    draft.extraCoversNote = "Group cancellation";
     matched = true;
-  } else if (groupMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
+    reasoningParts.push(`removing ${n} cancelled covers so we trim extra perishables before midnight`);
+  } else if (!matched && refineGroupMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
+    const n = Math.min(120, Math.max(2, parseInt(refineGroupMatch[1], 10)));
+    draft.extraCovers = liveSnapshot.extraCovers + n;
+    draft.extraCoversNote = `Adjusted group (+${n})`;
+    matched = true;
+    reasoningParts.push(`adjusting the proposed group size to +${n} covers instead`);
+  } else if (!matched && groupMatch && !/\b(kg|kilo|l|liter|litre|tray)\b/.test(t)) {
     const n = Math.min(120, Math.max(2, parseInt(groupMatch[1], 10)));
-    state.extraCovers += n;
-    state.extraCoversNote = "Group booking";
+    draft.extraCovers = (state.pendingProposal ? draft.extraCovers : liveSnapshot.extraCovers) + n;
+    draft.extraCoversNote = "Group booking";
     matched = true;
+    reasoningParts.push(`adding +${n} covers to tomorrow’s forecast and scaling perishable packs proportionally`);
   }
 
-  // 3. Fridge stock updates ("fridge empty on salad", "we have 5 kg cod in fridge", "no cream left")
-  const mentionedSkus = findMentionedSkus(t);
+  // 4. Fridge stock updates
   const isFridgeMention = /\b(fridge|frigo|stock|left|reste|empty|vide|threw|spoiled|jeté|out of|plus de|no |zero|0\s*kg)\b/.test(t);
   if (mentionedSkus.length > 0 && isFridgeMention && !matched) {
     const exactStockNum = t.match(/\b(\d+(?:\.\d+)?)\s*(?:kg|kilo|l|liter|litre|trays?)\b/);
     const setZero = /\b(empty|vide|threw|spoiled|jeté|out of|plus de|no |zero)\b/.test(t) || (exactStockNum && parseFloat(exactStockNum[1]) === 0);
     mentionedSkus.forEach((id) => {
       if (setZero) {
-        state.stocks[id] = 0;
+        draft.stocks[id] = 0;
         matched = true;
+        reasoningParts.push(`setting ${id} fridge stock to 0 and adding replacement quantity`);
       } else if (exactStockNum) {
-        state.stocks[id] = Math.max(0, parseFloat(exactStockNum[1]));
+        draft.stocks[id] = Math.max(0, parseFloat(exactStockNum[1]));
         matched = true;
+        reasoningParts.push(`updating ${id} fridge stock to ${exactStockNum[1]}`);
       }
     });
   }
 
-  // 4. Direct quantity edit ("add 2 kg bavette", "cut cod by 3", "remove tomatoes", "order 12 kg cod")
+  // 5. Direct item quantity edits
   if (mentionedSkus.length > 0 && !matched) {
     const removeIntent = /\b(remove|delete|skip|don'?t order|pas de|enlève|supprime)\b/.test(t);
     const minusIntent = /\b(cut|less|minus|reduce|decrease|drop|baisse|moins|-)\b/.test(t);
@@ -480,94 +565,153 @@ function parseKitchenCommandLocally(rawText) {
     const numMatch = t.match(/\b(\d{1,2})\b/);
 
     mentionedSkus.forEach((id) => {
-      const curLine = prevLines.find((l) => l.id === id);
+      const curLine = curDraftLines.find((l) => l.id === id);
       if (!curLine) return;
       if (removeIntent) {
-        state.overrides[id] = -curLine.recQty;
+        draft.overrides[id] = -curLine.recQty;
         matched = true;
+        reasoningParts.push(`removing ${curLine.name.split(" ")[1] || id} from tomorrow’s order`);
       } else if (setOrderIntent && numMatch) {
         const target = parseInt(numMatch[1], 10);
-        state.overrides[id] = target - curLine.recQty;
+        draft.overrides[id] = target - curLine.recQty;
         matched = true;
+        reasoningParts.push(`setting ${curLine.name.split(" ")[1] || id} order to ${target} ${curLine.unit}`);
       } else if (minusIntent) {
         const amt = numMatch ? parseInt(numMatch[1], 10) : 2;
-        state.overrides[id] = (state.overrides[id] || 0) - amt;
+        draft.overrides[id] = (draft.overrides[id] || 0) - amt;
         matched = true;
+        reasoningParts.push(`cutting ${amt} ${curLine.unit} of ${curLine.name.split(" ")[1] || id}`);
       } else if (plusIntent) {
         const amt = numMatch ? parseInt(numMatch[1], 10) : 2;
-        state.overrides[id] = (state.overrides[id] || 0) + amt;
+        draft.overrides[id] = (draft.overrides[id] || 0) + amt;
         matched = true;
+        reasoningParts.push(`adding +${amt} ${curLine.unit} of ${curLine.name.split(" ")[1] || id}`);
       }
     });
   }
 
-  // 5. Explicit weather changes
-  if (/\b(sunny|clear|warm|no rain|soleil|beau temps)\b/.test(t)) {
-    state.weather = "sunny";
-    weatherSelect.value = "sunny";
+  // 6. Weather change
+  if (!matched && /\b(sunny|clear|warm|no rain|soleil|beau temps)\b/.test(t)) {
+    draft.weather = "sunny";
     matched = true;
-  } else if (/\b(heavy rain|storm|pouring|grosse pluie|orage)\b/.test(t)) {
-    state.weather = "heavy_rain";
-    weatherSelect.value = "heavy_rain";
+    reasoningParts.push("switching tomorrow’s forecast to sunny terrace weather (+14% walk-ins)");
+  } else if (!matched && /\b(heavy rain|storm|pouring|grosse pluie|orage)\b/.test(t)) {
+    draft.weather = "heavy_rain";
     matched = true;
-  } else if (/\b(light rain|drizzle|showers|pluie légère)\b/.test(t)) {
-    state.weather = "light_rain";
-    weatherSelect.value = "light_rain";
+    reasoningParts.push("switching forecast to heavy rain (terrace closed, −24% walk-ins)");
+  } else if (!matched && /\b(light rain|drizzle|showers|pluie légère)\b/.test(t)) {
+    draft.weather = "light_rain";
     matched = true;
-  } else if (/\b(cloudy|overcast|nuageux)\b/.test(t)) {
-    state.weather = "cloudy";
-    weatherSelect.value = "cloudy";
+    reasoningParts.push("switching forecast to light evening showers (−10% walk-ins)");
+  } else if (!matched && /\b(cloudy|overcast|nuageux)\b/.test(t)) {
+    draft.weather = "cloudy";
     matched = true;
+    reasoningParts.push("switching forecast to mild overcast baseline");
   }
 
-  // STRICT GUARDRAIL: Never make random edits on greetings or unclear speech!
+  // If unclear or greeting -> reflect clearly without modifying anything!
   if (!matched) {
-    const isGreeting = /^(hi|hello|hey|bonjour|salut|coucou|test|yo|ok|merci|thanks)\b/.test(t);
-    const curTotal = prevLines.reduce((s, l) => s + l.lineEur, 0);
+    const curTotal = baseLines.reduce((s, l) => s + l.lineEur, 0);
+    const isGreeting = /^(hi|hello|hey|bonjour|salut|coucou|test|yo|merci|thanks)\b/.test(t);
     return {
-      noMatch: true,
-      infoMessage: isGreeting
-        ? `Hi Chef Karim — your €${curTotal} order is untouched. Tell me a specific kitchen update like “group of 25 just booked”, “swap cod to sea bass”, “add 2 kg bavette”, or “fridge empty on salad”.`
-        : `I didn’t change any quantities to keep your €${curTotal} order safe. Specify covers (“+20 guests” / “15 cancelled”), an ingredient (“add 2 kg bavette” / “swap cod to sea bass”), fridge stock (“empty on salad”), or weather (“sunny tomorrow”).`
+      action: "info",
+      heard: rawText,
+      reflection: isGreeting
+        ? `Hi Chef Karim! Tomorrow’s €${curTotal} order is ready for review. Tell me if anything changed tonight—like an extra group booking, a supplier item swap, a fridge stock update, or a weather shift—and I’ll propose the exact adjustments for your approval.`
+        : `I thought about “${rawText}”, and I don’t see a specific cover, fridge, or ingredient change to propose yet—so your €${curTotal} order is untouched. Tell me what you’d like adjusted (e.g., “group of 25 just booked”, “add 2 kg bavette”, or “swap cod to sea bass”) and I’ll draft the update for your yes/no.`
     };
   }
 
-  // Compute exact before -> after diff
-  const nextForecast = computeForecast();
-  const nextLines = computeLines(nextForecast);
+  // Build transparent proposal diff (live vs. proposed draft)
+  const nextForecast = computeForecastFor(draft);
+  const nextLines = computeLinesFor(draft, nextForecast);
   const diffPills = [];
   const rowNotes = {};
 
-  if (nextForecast.p50 !== prevForecast.p50) {
-    diffPills.push(`Covers: ${prevForecast.p50} → ${nextForecast.p50} (${fmtSigned(nextForecast.p50 - prevForecast.p50)})`);
+  if (nextForecast.p50 !== baseForecast.p50) {
+    diffPills.push(`Covers: ${baseForecast.p50} → ${nextForecast.p50} (${fmtSigned(nextForecast.p50 - baseForecast.p50)})`);
   }
 
   nextLines.forEach((nl, idx) => {
-    const pl = prevLines[idx];
+    const bl = baseLines[idx];
     const parts = [];
-    if (nl.name !== pl.name) {
-      parts.push(`Swapped to ${nl.name.split(" ").slice(0, 3).join(" ")} (€${nl.unitPrice}/${nl.unit})`);
+    if (nl.name !== bl.name) {
+      parts.push(`Swapped → ${nl.name.split(" ").slice(0, 3).join(" ")} (€${nl.unitPrice}/${nl.unit})`);
       diffPills.push(`Item: Cod → ${nl.name.split(" ").slice(0, 3).join(" ")}`);
     }
-    if (nl.stock !== pl.stock) {
-      parts.push(`Fridge ${pl.stock.toFixed(1)} → ${nl.stock.toFixed(1)} ${nl.unit}`);
+    if (nl.stock !== bl.stock) {
+      parts.push(`Fridge ${bl.stock.toFixed(1)} → ${nl.stock.toFixed(1)} ${nl.unit}`);
     }
-    if (nl.finalQty !== pl.finalQty) {
-      parts.push(`Qty ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
-      diffPills.push(`${nl.name.split(" ")[1] || nl.name}: ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+    if (nl.finalQty !== bl.finalQty) {
+      parts.push(`Qty ${bl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+      diffPills.push(`${nl.name.split(" ")[1] || nl.name}: ${bl.finalQty} → ${nl.finalQty} ${nl.unit}`);
     }
-    if (parts.length > 0) {
-      rowNotes[nl.id] = parts.join(" · ");
-    }
+    if (parts.length > 0) rowNotes[nl.id] = parts.join(" · ");
   });
 
-  const prevEur = prevLines.reduce((s, l) => s + l.lineEur, 0);
+  const baseEur = baseLines.reduce((s, l) => s + l.lineEur, 0);
   const nextEur = nextLines.reduce((s, l) => s + l.lineEur, 0);
-  if (nextEur !== prevEur) {
-    diffPills.push(`Order Total: €${prevEur} → €${nextEur}`);
+  if (nextEur !== baseEur) {
+    diffPills.push(`Total: €${baseEur} → €${nextEur} (${fmtSigned(nextEur - baseEur)}€)`);
   }
 
-  return { diffPills, rowNotes, costUsd: 0.000345 };
+  if (diffPills.length === 0) {
+    return {
+      action: "info",
+      heard: rawText,
+      reflection: `I checked “${rawText}” against your current order and the quantities already match—nothing needs to change.`
+    };
+  }
+
+  const combinedHeard = state.pendingProposal
+    ? `${state.pendingProposal.heard} + ${rawText}`
+    : rawText;
+
+  return {
+    action: "propose",
+    proposal: {
+      draftState: draft,
+      heard: combinedHeard,
+      reflection: `Based on your note, I recommend ${reasoningParts.join(" and ")}. Here is the exact impact before anything changes:`,
+      diffPills,
+      rowNotes,
+      costUsd: 0.000345
+    }
+  };
+}
+
+function commitPendingProposal() {
+  const p = state.pendingProposal;
+  if (!p) return;
+  state.historyStack.push(captureSnapshot(state));
+  Object.assign(state, captureSnapshot(p.draftState));
+  state.aiRowNotes = p.rowNotes;
+  state.lastApplied = {
+    heard: p.heard,
+    reflection: p.reflection.replace("I recommend", "Applied:"),
+    diffPills: p.diffPills,
+    costUsd: p.costUsd
+  };
+  state.pendingProposal = null;
+  state.lastInfo = null;
+  state.sent = false;
+  daySelect.value = state.day;
+  bookingsRange.value = state.bookings;
+  weatherSelect.value = state.weather;
+  eventSelect.value = state.event;
+  renderFridgeDrawer();
+  render();
+}
+
+function cancelPendingProposal() {
+  if (!state.pendingProposal) return;
+  const cancelledHeard = state.pendingProposal.heard;
+  state.pendingProposal = null;
+  state.lastInfo = {
+    heard: cancelledHeard,
+    reflection: "Cancelled — no changes were applied to tomorrow’s order."
+  };
+  render();
 }
 
 async function handleChefCommand(rawText) {
@@ -576,47 +720,55 @@ async function handleChefCommand(rawText) {
 
   const btn = document.getElementById("commandSubmitBtn");
   btn.disabled = true;
-  btn.textContent = "…";
+  btn.textContent = "Thinking…";
 
-  const snapshotBefore = captureSnapshot();
-  await new Promise((r) => setTimeout(r, 160));
-  const res = parseKitchenCommandLocally(cmd);
+  await new Promise((r) => setTimeout(r, 260));
+  const res = buildReflectiveProposal(cmd);
 
-  if (res.specialAction === "undo") {
+  if (res.action === "confirm-yes") {
+    commitPendingProposal();
+  } else if (res.action === "confirm-cancel") {
+    cancelPendingProposal();
+  } else if (res.action === "undo") {
     const snap = state.historyStack.pop();
     if (snap) {
       Object.assign(state, snap);
+      state.aiRowNotes = {};
+      state.lastApplied = null;
+      state.pendingProposal = null;
+      state.lastInfo = { heard: cmd, reflection: "Reverted your last confirmed AI change." };
       daySelect.value = state.day;
       bookingsRange.value = state.bookings;
       weatherSelect.value = state.weather;
       eventSelect.value = state.event;
+      renderFridgeDrawer();
+      render();
     } else {
-      state.lastDiffPills = [];
-      state.lastInfoMessage = "Nothing to undo — you’re already on the initial forecast.";
-      state.lastCommandHeard = cmd;
+      state.lastInfo = { heard: cmd, reflection: "Nothing to undo — you’re already on the baseline order." };
+      render();
     }
-  } else if (res.specialAction === "reset") {
+  } else if (res.action === "reset") {
     applyPreset(state.preset);
-  } else if (res.specialAction === "send") {
+  } else if (res.action === "send") {
+    state.pendingProposal = null;
     state.sent = true;
-  } else if (res.noMatch) {
-    // Do NOT push to historyStack or touch any order numbers!
-    state.lastDiffPills = [];
-    state.aiRowNotes = {};
-    state.lastInfoMessage = res.infoMessage;
-    state.lastCommandHeard = cmd;
-  } else {
-    state.historyStack.push(snapshotBefore);
-    state.sent = false;
-    state.lastInfoMessage = "";
-    state.lastDiffPills = res.diffPills;
-    state.aiRowNotes = res.rowNotes;
-    state.lastCommandHeard = cmd;
-    state.lastCostUsd = res.costUsd;
+    render();
+  } else if (res.action === "propose") {
+    state.pendingProposal = res.proposal;
+    state.lastInfo = null;
+    state.lastApplied = null;
+    render();
+  } else if (res.action === "info") {
+    if (!state.pendingProposal) {
+      state.lastApplied = null;
+      state.lastInfo = { heard: res.heard, reflection: res.reflection };
+    } else {
+      // Keep pending proposal open and gently remind user to confirm, refine, or cancel
+      state.pendingProposal.reflection = `${res.reflection} (Your pending proposal below is still waiting—say “yes” to apply, “cancel” to discard, or specify a tweak.)`;
+    }
+    render();
   }
 
-  renderFridgeDrawer();
-  render();
   document.getElementById("commandInput").value = "";
   btn.disabled = false;
   btn.textContent = "Apply";
@@ -700,9 +852,9 @@ function applyPreset(name) {
   state.overrides = {};
   state.historyStack = [];
   state.aiRowNotes = {};
-  state.lastDiffPills = [];
-  state.lastInfoMessage = "";
-  state.lastCommandHeard = "";
+  state.pendingProposal = null;
+  state.lastApplied = null;
+  state.lastInfo = null;
   state.sent = false;
 
   daySelect.value = state.day;
@@ -737,7 +889,9 @@ async function fetchLiveParisWeather() {
     state.extraCoversNote = "";
     state.overrides = {};
     state.aiRowNotes = {};
-    state.lastDiffPills = [];
+    state.pendingProposal = null;
+    state.lastApplied = null;
+    state.lastInfo = null;
 
     if (rainMm >= 6) state.weather = "heavy_rain";
     else if (rainMm >= 1) state.weather = "light_rain";
@@ -823,11 +977,18 @@ document.querySelectorAll(".prompt-pill").forEach((pill) => {
   pill.addEventListener("click", () => handleChefCommand(pill.dataset.cmd));
 });
 
-// Multi-step Undo for AI changes
+// Confirm Yes / Cancel / Undo Buttons
+document.getElementById("confirmYesBtn").addEventListener("click", commitPendingProposal);
+document.getElementById("confirmCancelBtn").addEventListener("click", cancelPendingProposal);
+
 document.getElementById("undoCmdBtn").addEventListener("click", () => {
   const snap = state.historyStack.pop();
   if (!snap) return;
   Object.assign(state, snap);
+  state.aiRowNotes = {};
+  state.lastApplied = null;
+  state.pendingProposal = null;
+  state.lastInfo = { heard: "Undo", reflection: "Reverted your last confirmed AI change." };
   daySelect.value = state.day;
   bookingsRange.value = state.bookings;
   weatherSelect.value = state.weather;

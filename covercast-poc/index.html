@@ -221,19 +221,30 @@
         </button>
       </div>
 
-      <!-- Crystal-Clear AI Diff Card (Shows EXACTLY what AI changed + Undo) -->
+      <!-- Reflective AI Proposal / Confirmation Card (Reflect -> Ask Yes/Cancel -> Refine Loop) -->
       <div class="ai-diff-card" id="aiDiffCard" hidden>
         <div class="ai-diff-top">
           <div class="ai-diff-headline">
-            <span class="ai-spark">✦ AI updated your order</span>
+            <span class="ai-spark" id="aiCardBadge">🧠 AI Reflection</span>
             <span class="ai-heard" id="aiHeardQuote"></span>
           </div>
           <div class="ai-diff-actions">
             <span class="ai-cost-mini" id="aiCostMini">$0.000345</span>
-            <button type="button" id="undoCmdBtn" class="undo-btn">↺ Undo AI change</button>
+            <button type="button" id="undoCmdBtn" class="undo-btn" hidden>↺ Undo applied</button>
           </div>
         </div>
+        <p class="ai-reflection-text" id="aiReflectionText"></p>
         <div class="ai-diff-pills" id="aiDiffPills"></div>
+        <div class="ai-confirm-bar" id="aiConfirmBar" hidden>
+          <span class="ai-confirm-q" id="aiConfirmQuestion">Should I apply these changes to tomorrow’s order?</span>
+          <div class="ai-confirm-btns">
+            <button type="button" id="confirmYesBtn" class="confirm-yes-btn">✓ Yes, apply</button>
+            <button type="button" id="confirmCancelBtn" class="confirm-cancel-btn">✕ Cancel</button>
+          </div>
+        </div>
+        <div class="ai-refine-hint" id="aiRefineHint" hidden>
+          Or say / type a tweak to adjust this proposal first (e.g., “keep cod at 8 kg”, “make it 15 people”, “yes”, or “cancel”).
+        </div>
       </div>
     </section>
 
