@@ -3,266 +3,296 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoverCast — Nightly Chef Order Copilot (Bistrot Urbain PoC)</title>
+  <title>CoverCast — 22:45 Chef Order Copilot (Bistrot Urbain)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <!-- Top Thin-Wrapper Header -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <!-- Minimal Sleek Top Bar -->
   <header class="topbar">
-    <div class="brand-group">
+    <div class="brand-wrap">
       <div class="logo-mark" aria-hidden="true">CC</div>
-      <div>
-        <div class="brand-title-row">
-          <span class="brand-name">CoverCast</span>
-          <span class="site-pill">Bistrot Urbain #04 · Montparnasse (Paris 15e)</span>
-          <span class="persona-pill">Chef Karim · 22:45 Service Close</span>
-        </div>
-        <p class="mot-tagline">
-          <strong>Moment of Truth:</strong> Turn tonight’s bookings, weather, local events &amp; fridge stock into a probabilistic cover forecast and a 1-click validated supplier order.
-        </p>
+      <div class="brand-text">
+        <span class="brand-name">CoverCast</span>
+        <span class="site-chip">Bistrot Urbain #04 · Montparnasse</span>
+        <span class="clock-chip">● 22:45 Service Close</span>
       </div>
     </div>
 
-    <div class="topbar-actions">
-      <div class="preset-group" role="group" aria-label="1-Click Demo Scenarios">
-        <span class="preset-label">1-Click Presets:</span>
-        <button type="button" class="preset-btn active" data-preset="reference">
-          🎯 Sat · Rain + Trade Show (Demo)
-        </button>
-        <button type="button" class="preset-btn" data-preset="surge">
-          ☀️ Fri · Sunny + Match Surge
-        </button>
-        <button type="button" class="preset-btn" data-preset="unknown">
-          ❓ Sat · Unknown Big Event (Hand-off)
-        </button>
-        <button type="button" class="preset-btn" data-preset="strike">
-          🚇 Tue · Drizzle + Transit Strike
-        </button>
-      </div>
-      <button type="button" id="llmConfigBtn" class="api-pill-btn" title="Configure optional live OpenAI / Gemini / Claude API key">
-        <span class="status-dot" id="engineDot"></span>
-        <span id="engineBadgeText">Hybrid AI Engine · $0.000345/call</span>
+    <div class="scenario-tabs" role="group" aria-label="1-Click Demo Scenarios">
+      <button type="button" class="scenario-tab active" data-preset="reference">
+        🌧️ Sat · Rain + Expo <span class="tab-tag">Demo</span>
+      </button>
+      <button type="button" class="scenario-tab" data-preset="surge">
+        ☀️ Fri · Sunny + Match
+      </button>
+      <button type="button" class="scenario-tab" data-preset="strike">
+        🚇 Tue · Strike + Drizzle
+      </button>
+    </div>
+
+    <div class="topbar-right">
+      <button type="button" id="llmConfigBtn" class="engine-pill" title="Configure optional live OpenAI / Gemini / Claude key">
+        <span class="pulse-dot"></span>
+        <span id="engineBadgeText">$0.000345 / call · Hybrid AI</span>
       </button>
     </div>
   </header>
 
-  <!-- Single-Screen Workspace -->
-  <main class="workspace">
-    <!-- LEFT PANEL: Live Operational Inputs -->
-    <section class="panel input-panel" aria-label="Service Context & Fridge Inventory">
-      <div class="panel-header">
-        <div>
-          <span class="step-badge">STEP 1 · LIVE INPUTS</span>
-          <h2>Tomorrow’s Service Signals</h2>
-        </div>
-        <span class="sync-tag">POS + Zenchef synced 22:42</span>
+  <main class="app-shell">
+    <!-- =================================================================== -->
+    <!-- STAGE 1: TONIGHT'S SIGNALS (CLEAN VISUAL CONTEXT CARDS + HERO CTA)  -->
+    <!-- =================================================================== -->
+    <section class="context-section" id="contextSection">
+      <div class="context-header" id="contextIntro">
+        <div class="kicker">CHEF KARIM’S 22:45 NIGHTLY CHECK · ZERO SPREADSHEETS</div>
+        <h1>Evening service just wrapped. Ready to build tomorrow’s supplier order?</h1>
+        <p class="lead">
+          CoverCast synced your Zenchef bookings, Météo-France hourly weather, Paris events within 600m, and walk-in fridge inventory.
+        </p>
       </div>
 
-      <form id="forecastForm" class="controls-stack">
-        <div class="field-grid-2">
-          <div class="field">
-            <label for="daySelect">Target Service Day</label>
-            <select id="daySelect">
-              <option value="saturday" selected>Saturday (peak)</option>
+      <!-- 4 Clean Interactive Signal Cards -->
+      <div class="signals-grid">
+        <!-- Card 1: Day & Bookings -->
+        <div class="signal-card">
+          <div class="signal-top">
+            <span class="signal-icon">📅</span>
+            <span class="signal-source">Zenchef · Synced</span>
+          </div>
+          <div class="signal-label">Target Service &amp; Bookings</div>
+          <div class="signal-controls-row">
+            <select id="daySelect" class="dark-select compact-select" aria-label="Service Day">
+              <option value="saturday" selected>Saturday</option>
               <option value="friday">Friday</option>
               <option value="thursday">Thursday</option>
               <option value="wednesday">Wednesday</option>
               <option value="tuesday">Tuesday</option>
             </select>
-          </div>
-          <div class="field">
-            <label for="bookingsInput">
-              Confirmed Bookings
-              <span class="unit-hint" id="bookingsHint">Zenchef</span>
-            </label>
-            <div class="number-row">
-              <input type="range" id="bookingsRange" min="60" max="320" value="198" />
-              <input type="number" id="bookingsInput" min="40" max="360" value="198" class="num-box" />
+            <div class="booking-big">
+              <span id="bookingsDisplay">198</span>
+              <span class="booking-unit">booked</span>
             </div>
           </div>
+          <input type="range" id="bookingsRange" min="60" max="320" value="198" class="dark-range" aria-label="Confirmed Bookings" />
         </div>
 
-        <div class="field">
-          <label for="weatherSelect">Météo-France Evening Forecast (Paris 15e)</label>
-          <select id="weatherSelect">
-            <option value="heavy_rain" selected>🌧️ Heavy rain · terrace closed</option>
-            <option value="light_rain">🌦️ Light showers · fewer walk-ins</option>
-            <option value="cloudy">⛅ Overcast · normal baseline</option>
-            <option value="sunny">☀️ Clear &amp; warm · full terrace</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="eventSelect">Local Event Radar (&lt; 600m radius)</label>
-          <select id="eventSelect">
-            <option value="tradeshow" selected>🎪 Trade show · 18,000 visitors, 450 m</option>
-            <option value="none">📍 No major local event</option>
-            <option value="match">⚽ Match night · walk-in surge</option>
-            <option value="strike">🚇 Metro line 12 disruption</option>
-            <option value="unknown">❓ Big event not in the radar</option>
-          </select>
-        </div>
-
-        <div class="stock-box">
-          <div class="stock-header">
-            <span>Walk-In Fridge Stock (End of Service)</span>
-            <span class="stock-sub">Editable spot-check</span>
+        <!-- Card 2: Weather -->
+        <div class="signal-card">
+          <div class="signal-top">
+            <span class="signal-icon" id="weatherIcon">🌧️</span>
+            <span class="signal-source">Météo-France · Paris 15e</span>
           </div>
-          <div id="stockInputsList" class="stock-grid">
-            <!-- Populated dynamically by app.js -->
-          </div>
+          <div class="signal-label">Tomorrow Evening Weather</div>
+          <select id="weatherSelect" class="dark-select" aria-label="Weather Forecast">
+            <option value="heavy_rain" selected>Heavy Rain · 14mm · 9°C</option>
+            <option value="light_rain">Light Showers · 3mm · 12°C</option>
+            <option value="cloudy">Mild Overcast · 0mm · 16°C</option>
+            <option value="sunny">Clear &amp; Warm · 22°C (Terrace)</option>
+          </select>
+          <div class="signal-hint" id="weatherImpactHint">Terrace closed · heavy walk-in drop expected</div>
         </div>
 
-        <button type="submit" id="runForecastBtn" class="primary-run-btn">
-          <span class="btn-spark">✦</span>
-          <span id="runBtnLabel">Recompute Forecast &amp; Supplier Order</span>
+        <!-- Card 3: Local Events -->
+        <div class="signal-card">
+          <div class="signal-top">
+            <span class="signal-icon" id="eventIcon">🎪</span>
+            <span class="signal-source">Paris Event Radar (&lt;600m)</span>
+          </div>
+          <div class="signal-label">Nearby Neighborhood Signal</div>
+          <select id="eventSelect" class="dark-select" aria-label="Local Event">
+            <option value="tradeshow" selected>Salon Porte de Versailles (18k)</option>
+            <option value="none">No Major Local Event</option>
+            <option value="match">Parc des Princes · Match Night</option>
+            <option value="strike">RATP Line 12 Metro Strike</option>
+          </select>
+          <div class="signal-hint" id="eventImpactHint">450m away · evening business spillover</div>
+        </div>
+
+        <!-- Card 4: Walk-in Fridge -->
+        <div class="signal-card fridge-card">
+          <div class="signal-top">
+            <span class="signal-icon">🧊</span>
+            <button type="button" id="toggleFridgeBtn" class="fridge-edit-btn">Spot-check stock ✎</button>
+          </div>
+          <div class="signal-label">Walk-In Fridge (End of Service)</div>
+          <div class="fridge-summary" id="fridgeSummary">
+            2.6 kg Cod · 5.7 kg Bavette · 4.2 kg Greens + 3 items
+          </div>
+          <div class="signal-hint">Theoretical POS stock auto-deducted</div>
+        </div>
+      </div>
+
+      <!-- Expandable Clean Fridge Spot-Check Drawer (Hidden by Default) -->
+      <div class="fridge-drawer" id="fridgeDrawer" hidden>
+        <div class="fridge-drawer-top">
+          <span><strong>Walk-In #1 Spot Check</strong> — Adjust any on-hand perishable quantity before ordering:</span>
+          <button type="button" id="closeFridgeBtn" class="ghost-btn">Done ✓</button>
+        </div>
+        <div class="fridge-grid" id="stockInputsList"></div>
+      </div>
+
+      <!-- Dramatic Launch CTA (Hidden once revealed, replaced by subtle Re-run link) -->
+      <div class="launch-cta-wrap" id="launchCtaWrap">
+        <button type="button" id="buildOrderBtn" class="hero-launch-btn">
+          <span class="spark-icon">✦</span>
+          <span>Build Tomorrow’s Order with CoverCast</span>
+          <span class="arrow-icon">→</span>
         </button>
-      </form>
+        <p class="launch-subnote">
+          Replaces Chef Karim’s habitual <strong id="ctaHabitualRef">395-cover / €787</strong> Saturday guess in under 2 seconds · Full human control
+        </p>
+      </div>
     </section>
 
-    <!-- RIGHT PANEL: AI Forecast + Explainable Order + 1-Click Chef Validation -->
-    <section class="panel output-panel" aria-label="Forecast & Supplier Order">
-      <!-- KPI Strip -->
-      <div class="kpi-strip" aria-live="polite">
-        <div class="kpi-card highlight-forecast">
-          <div class="kpi-top">
-            <span class="kpi-label">Predicted Covers (P50)</span>
-            <span class="ci-pill" id="ciBadge">90% CI: 287 – 337</span>
+    <!-- =================================================================== -->
+    <!-- TRANSITION: LIVE 1.5s AI REASONING STREAM                           -->
+    <!-- =================================================================== -->
+    <section class="thinking-card" id="thinkingCard" hidden aria-live="polite">
+      <div class="thinking-spinner" aria-hidden="true"></div>
+      <div class="thinking-content">
+        <div class="thinking-title">CoverCast is preparing Chef Karim’s order...</div>
+        <div class="thinking-steps" id="thinkingSteps">
+          <div class="t-step" data-step="0"><span class="t-dot"></span> Syncing 198 Zenchef bookings &amp; 52-week POS dish mix</div>
+          <div class="t-step" data-step="1"><span class="t-dot"></span> Applying Météo-France rain elasticity &amp; Porte de Versailles event radar</div>
+          <div class="t-step" data-step="2"><span class="t-dot"></span> Computing 90% cover probability curve &amp; deducting walk-in fridge stock</div>
+          <div class="t-step" data-step="3"><span class="t-dot"></span> Drafting plain-English Chef brief &amp; supplier purchase orders</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- STAGE 2: THE MOMENT OF TRUTH REVEAL                                 -->
+    <!-- =================================================================== -->
+    <section class="reveal-stage" id="revealStage" hidden>
+      <!-- HERO VISUAL DUO: Interactive Forecast Bell Curve + Savings Comparison -->
+      <div class="hero-duo">
+        <!-- LEFT HERO: Interactive SVG Bell Curve Chart -->
+        <div class="glass-card chart-card">
+          <div class="card-head-row">
+            <div>
+              <span class="eyebrow">PROBABILISTIC DEMAND FORECAST</span>
+              <div class="forecast-headline-row">
+                <span class="forecast-big" id="kpiCovers">312</span>
+                <span class="forecast-unit">predicted covers</span>
+                <span class="ci-badge" id="ciBadge">90% CI: 287 – 337</span>
+              </div>
+            </div>
+            <div class="habit-compare-pill" id="habitComparePill">
+              Karim’s habit: <strong>395</strong>
+            </div>
           </div>
-          <div class="kpi-value-row">
-            <span class="kpi-big" id="kpiCovers">312</span>
-            <span class="kpi-vs" id="kpiCoversVs">vs. 395 habitual Sat</span>
+
+          <!-- Crisp Vector Probability Curve SVG -->
+          <div class="bell-chart-wrap">
+            <svg id="bellCurveSvg" viewBox="0 0 600 185" class="bell-svg" role="img" aria-label="Cover forecast probability curve comparing CoverCast against habitual assumption"></svg>
           </div>
-          <div class="ci-bar-track" title="90% Statistical Prediction Interval">
-            <div class="ci-bar-range" id="ciBarRange"></div>
-            <div class="ci-bar-median" id="ciBarMedian"></div>
-            <div class="ci-bar-habitual" id="ciBarHabitual" title="Habitual gut-feel assumption"></div>
-          </div>
+
+          <!-- Clean Causal Driver Chips + 1-Line Chef Brief -->
+          <div class="causal-strip" id="causalStrip"></div>
+          <p class="chef-brief-line" id="aiHeadline"></p>
         </div>
 
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span class="kpi-label">CoverCast Net Order</span>
-            <span class="sub-tag">6 fresh SKUs</span>
+        <!-- RIGHT HERO: The Money Story (CoverCast vs Habitual Order) -->
+        <div class="glass-card money-card" id="moneyCard">
+          <div class="card-head-row">
+            <span class="eyebrow emerald-eyebrow" id="impactEyebrow">PERISHABLE WASTE AVOIDED TONIGHT</span>
+            <span class="pct-pill" id="impactPct">−31.3%</span>
           </div>
-          <div class="kpi-value-row">
-            <span class="kpi-big" id="kpiOrderEur">€541</span>
-            <span class="kpi-vs strike-ref" id="kpiHabitualEur">€787 habitual</span>
-          </div>
-          <div class="kpi-foot" id="kpiOverrideNote">0 manual chef overrides applied</div>
-        </div>
 
-        <div class="kpi-card impact-card" id="impactCard">
-          <div class="kpi-top">
-            <span class="kpi-label" id="impactLabel">Perishable Waste Avoided</span>
-            <span class="impact-pct" id="impactPct">−31.3%</span>
+          <div class="savings-hero-row">
+            <span class="savings-giant" id="kpiSavedEur">€246</span>
+            <span class="savings-sub" id="impactSubtext">kept out of Monday’s bin</span>
           </div>
-          <div class="kpi-value-row">
-            <span class="kpi-big emerald-text" id="kpiSavedEur">€246</span>
-            <span class="kpi-vs" id="kpiAnnualHint">8% → 5% target path</span>
-          </div>
-          <div class="kpi-foot" id="impactSubtext">Direct Rungis/Metro invoice reduction</div>
-        </div>
 
-        <div class="kpi-card telemetry-card">
-          <div class="kpi-top">
-            <span class="kpi-label">AI Call Cost &amp; Speed</span>
-            <span class="model-tag" id="telemetryModel">gpt-4o-mini eq.</span>
+          <!-- Visual Side-by-Side Comparison Bars -->
+          <div class="compare-bars">
+            <div class="bar-row">
+              <div class="bar-label-row">
+                <span class="bar-name">Karim’s Habitual Order</span>
+                <span class="bar-val muted-val" id="kpiHabitualEur">€787</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill habit-fill" id="habitBarFill" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label-row">
+                <span class="bar-name strong-name">CoverCast Net Order</span>
+                <span class="bar-val emerald-val" id="kpiOrderEur">€541</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill cc-fill" id="ccBarFill" style="width: 68.7%;"></div>
+              </div>
+            </div>
           </div>
-          <div class="kpi-value-row">
-            <span class="kpi-mono" id="kpiAiCost">$0.000345</span>
-            <span class="kpi-vs" id="kpiLatency">0.84s</span>
+
+          <!-- Chef Watchout & AI Unit Economics Footer -->
+          <div class="watchout-pill" id="chefWatchout"></div>
+
+          <div class="telemetry-strip">
+            <span id="telemetryCost">⚡ AI Call: <strong>$0.000345</strong> (<span id="telemetrySpeed">0.84s</span>)</span>
+            <span>🛡️ AI Act Art. 50 · Chef Sign-Off Required</span>
           </div>
-          <div class="kpi-foot" id="kpiTokens">842 in / 215 out tok · &lt;€0.01/mo</div>
         </div>
       </div>
 
-      <!-- Causal Waterfall + Plain-English Chef Briefing -->
-      <div class="explain-card">
-        <div class="explain-top-row">
-          <div class="waterfall-chips" id="waterfallChips">
-            <!-- Populated by app.js -->
-          </div>
-          <span class="compliance-badge" title="EU AI Act Art. 50 Transparency & Human Oversight">
-            🛡️ AI Decision-Support · Chef Sign-Off Required
-          </span>
-        </div>
-        <p class="ai-headline" id="aiHeadline" aria-live="polite"></p>
-        <div class="ai-drivers-row" id="aiDrivers"></div>
-        <div class="chef-watchout" id="chefWatchout"></div>
-      </div>
-
-      <!-- Editable Supplier Order Table -->
-      <div class="table-container">
-        <div class="table-header-bar">
+      <!-- INGREDIENT ORDER CARDS (CLEAN 3x2 VISUAL GRID — NO DENSE TABLE) -->
+      <div class="orders-section">
+        <div class="orders-header">
           <div>
-            <span class="step-badge">STEP 2 · VERIFY &amp; ADJUST</span>
-            <h3>Ingredient-Level Supplier Order (Net of Fridge Stock)</h3>
+            <span class="eyebrow">READY-TO-SEND SUPPLIER CART · NET OF WALK-IN FRIDGE</span>
+            <h2>6 Fresh Perishables Adjusted for Tomorrow</h2>
           </div>
-          <button type="button" id="resetOverridesBtn" class="ghost-sm-btn" hidden>
-            ↺ Reset Chef Overrides
-          </button>
+          <div class="orders-header-right">
+            <span class="override-status" id="kpiOverrideNote">All quantities AI-calibrated</span>
+            <button type="button" id="resetOverridesBtn" class="ghost-btn" hidden>↺ Reset Overrides</button>
+          </div>
         </div>
 
-        <table class="order-table">
-          <thead>
-            <tr>
-              <th>Perishable Ingredient &amp; Supplier</th>
-              <th>Shelf Life</th>
-              <th class="num-col">In Fridge</th>
-              <th class="num-col">Gross Need</th>
-              <th class="num-col">Habitual Order</th>
-              <th class="center-col">CoverCast Order (Chef Editable)</th>
-              <th class="num-col">Line Total</th>
-              <th class="num-col">vs. Habitual</th>
-            </tr>
-          </thead>
-          <tbody id="orderTableBody">
-            <!-- Populated by app.js -->
-          </tbody>
-        </table>
+        <div class="sku-cards-grid" id="skuCardsGrid"></div>
       </div>
 
-      <!-- Bottom 1-Click Validation Bar -->
-      <div class="handoff-banner" id="handoffBanner" hidden>
-        <strong>Low confidence: a big event the model does not know.</strong>
-        <span>The range is wide on purpose. Check the order with the maître d’ before sending.</span>
-        <label class="handoff-check"><input type="checkbox" id="handoffCheck" /> I checked the forecast and the order</label>
-      </div>
-
-      <div class="validation-bar" id="validationBar">
-        <div class="validation-meta">
-          <div class="timer-pill">
-            ⏱️ Prep time: <strong id="prepTimer">00:34</strong> <span class="muted">(vs. 45 min manual)</span>
+      <!-- STICKY 1-CLICK HUMAN VALIDATION DOCK -->
+      <div class="action-dock" id="validationBar">
+        <div class="dock-left">
+          <div class="timer-chip">
+            ⏱️ <strong id="prepTimer">00:34</strong> <span>vs. 45 min manual</span>
           </div>
           <input
             type="text"
             id="chefNoteInput"
-            class="chef-note-input"
-            placeholder="Optional Chef note for morning brigade or supplier (e.g., Check cod delivery temp < 2°C)..."
+            class="dock-note-input"
+            placeholder="Optional note for Rungis / morning brigade (e.g., Check cod delivery temp < 2°C)..."
           />
         </div>
-        <button type="button" id="approveOrderBtn" class="approve-btn">
-          ✓ Approve &amp; Send Supplier Orders (<span id="approveBtnTotal">€541</span>)
+        <button type="button" id="approveOrderBtn" class="approve-cta">
+          ✓ Approve &amp; Send 5 Supplier Orders · <span id="approveBtnTotal">€541</span>
         </button>
       </div>
 
-      <!-- Confirmation Banner (shown on 1-click approve) -->
-      <div class="dispatch-banner" id="dispatchBanner" hidden>
-        <div class="dispatch-left">
-          <div class="check-circle">✓</div>
-          <div>
-            <h4 id="dispatchTitle">4 Supplier Purchase Orders Dispatched — Validated by Chef Karim</h4>
-            <p id="dispatchSummary"></p>
+      <!-- DISPATCHED CONFIRMATION PANEL (SHOWN ON 1-CLICK APPROVE) -->
+      <div class="dispatch-card" id="dispatchBanner" hidden>
+        <div class="dispatch-top">
+          <div class="dispatch-badge-row">
+            <div class="check-orb">✓</div>
+            <div>
+              <h3 id="dispatchTitle">5 Supplier Orders Dispatched (€541) — Approved by Chef Karim</h3>
+              <p id="dispatchSummary"></p>
+            </div>
+          </div>
+          <div class="dispatch-btns">
+            <button type="button" id="exportPoBtn" class="emerald-outline-btn">⬇ Download PO (.txt)</button>
+            <button type="button" id="editAgainBtn" class="ghost-btn">Edit Quantities</button>
+            <button type="button" id="replayDemoBtn" class="ghost-btn">↺ Replay Reveal</button>
           </div>
         </div>
-        <div class="dispatch-actions">
-          <button type="button" id="exportPoBtn" class="secondary-btn">⬇ Download PO Summary (.txt)</button>
-          <button type="button" id="editAgainBtn" class="ghost-sm-btn">Edit Order</button>
-        </div>
+        <div class="supplier-slips" id="supplierSlips"></div>
       </div>
     </section>
   </main>
@@ -270,29 +300,27 @@
   <!-- Optional Live LLM Key Modal -->
   <div class="modal-backdrop" id="llmModal" hidden>
     <div class="modal-card" role="dialog" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <h3 id="modalTitle">Live LLM API Telemetry Mode (Optional)</h3>
+      <div class="modal-head">
+        <h3 id="modalTitle">Live LLM API Mode (Optional)</h3>
         <button type="button" id="closeModalBtn" class="close-x" aria-label="Close">×</button>
       </div>
       <p class="modal-desc">
-        CoverCast works <strong>100% out-of-the-box without configuration</strong> using its calibrated quantile forecaster + structured causal engine (and uses server env keys automatically when deployed on Vercel). To run a live browser/API LLM call with your own key during a demo, paste it below:
+        CoverCast works <strong>100% zero-setup</strong> out of the box using its calibrated quantile forecaster + structured causal engine. To fire a live OpenAI / Gemini / Anthropic call during your defense, paste a key below (kept in memory only):
       </p>
-      <div class="field">
+      <div class="modal-field">
         <label for="providerSelect">LLM Provider</label>
-        <select id="providerSelect">
-          <option value="">Built-in Calibrated Hybrid Engine (Zero-Setup Default)</option>
-          <option value="openai">OpenAI — gpt-4o-mini ($0.15 / 1M in, $0.60 / 1M out)</option>
+        <select id="providerSelect" class="dark-select">
+          <option value="">Built-in Calibrated Hybrid Engine (Default)</option>
+          <option value="openai">OpenAI — gpt-4o-mini ($0.15/1M in, $0.60/1M out)</option>
           <option value="gemini">Google Gemini — gemini-2.5-flash</option>
           <option value="anthropic">Anthropic — claude-3-5-haiku</option>
         </select>
       </div>
-      <div class="field">
-        <label for="apiKeyInput">API Key (stored in session memory only, never persisted)</label>
-        <input type="password" id="apiKeyInput" placeholder="sk-... or AIza..." autocomplete="off" />
+      <div class="modal-field">
+        <label for="apiKeyInput">API Key</label>
+        <input type="password" id="apiKeyInput" class="dock-note-input" placeholder="sk-... or AIza..." autocomplete="off" />
       </div>
-      <div class="modal-actions">
-        <button type="button" id="saveLlmBtn" class="primary-run-btn">Apply &amp; Re-run Live Call</button>
-      </div>
+      <button type="button" id="saveLlmBtn" class="approve-cta" style="width: 100%;">Apply &amp; Run Live Call</button>
     </div>
   </div>
 
