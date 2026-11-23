@@ -16,13 +16,16 @@
       <span class="logo-dot" aria-hidden="true">CC</span>
       <span class="brand-name">CoverCast</span>
       <span class="brand-sep">/</span>
-      <span class="brand-site">Bistrot Urbain #04 · 22:45</span>
+      <span class="brand-site">Bistrot Urbain #04 · Tonight 22:45</span>
     </div>
 
-    <nav class="presets" aria-label="Demo scenarios">
-      <button type="button" class="preset-tab active" data-preset="reference">Sat Demo</button>
-      <button type="button" class="preset-tab" data-preset="surge">Fri Surge</button>
-      <button type="button" class="preset-tab" data-preset="strike">Tue Strike</button>
+    <nav class="presets-wrap" aria-label="Demo scenarios">
+      <span class="presets-label">Demo day:</span>
+      <div class="presets">
+        <button type="button" class="preset-tab active" data-preset="reference">Sat · Rain (Main)</button>
+        <button type="button" class="preset-tab" data-preset="surge">Fri · Sunny Surge</button>
+        <button type="button" class="preset-tab" data-preset="strike">Tue · Strike</button>
+      </div>
     </nav>
 
     <button type="button" id="llmConfigBtn" class="api-btn" title="Configure optional live OpenAI / Gemini / Anthropic key">
@@ -36,7 +39,7 @@
     <!-- Quiet 1-Line Context Strip -->
     <div class="context-bar">
       <div class="context-text" id="contextSummaryText">
-        Saturday · 198 bookings · Heavy Rain (14mm) · Porte de Versailles Expo
+        Ordering for tomorrow (Saturday 06:00 delivery) · 198 Zenchef bookings · POS stock synced
       </div>
       <button type="button" id="toggleSignalsBtn" class="link-btn">Edit signals</button>
     </div>
@@ -45,7 +48,7 @@
     <section class="signals-drawer" id="signalsDrawer" hidden>
       <div class="drawer-grid">
         <label class="drawer-field">
-          <span>Day</span>
+          <span>Tomorrow’s Service</span>
           <select id="daySelect">
             <option value="saturday" selected>Saturday</option>
             <option value="friday">Friday</option>
@@ -55,11 +58,11 @@
           </select>
         </label>
         <label class="drawer-field">
-          <span>Bookings (<strong id="bookingsValLabel">198</strong>)</span>
+          <span>Zenchef Bookings (<strong id="bookingsValLabel">198</strong>)</span>
           <input type="range" id="bookingsRange" min="60" max="320" value="198" />
         </label>
         <label class="drawer-field">
-          <span>Weather</span>
+          <span>Weather Forecast</span>
           <select id="weatherSelect">
             <option value="heavy_rain" selected>Heavy Rain (14mm)</option>
             <option value="light_rain">Light Showers (3mm)</option>
@@ -68,7 +71,7 @@
           </select>
         </label>
         <label class="drawer-field">
-          <span>Nearby Event</span>
+          <span>Nearby Event (&lt;600m)</span>
           <select id="eventSelect">
             <option value="tradeshow" selected>Porte de Versailles Expo</option>
             <option value="none">None</option>
@@ -78,70 +81,88 @@
         </label>
       </div>
       <div class="fridge-inline">
-        <div class="fridge-inline-label">Walk-in fridge stock on hand:</div>
+        <div class="fridge-inline-label">Auto-estimated fridge stock (Yesterday’s delivery − Tonight’s POS sales) — edit if needed:</div>
         <div class="fridge-inline-grid" id="fridgeInputsGrid"></div>
       </div>
     </section>
 
-    <!-- 1. HERO SUMMARY: ONLY 3 BOLD NUMBERS + 1 CLEAN BAR + 1 SENTENCE -->
+    <!-- 1. HERO SUMMARY: 3 NUMBERS + CLEAN VISUAL SCALE + CRISP WHY BREAKDOWN -->
     <section class="hero-summary">
       <div class="three-metrics">
         <div class="metric">
           <div class="metric-val" id="metricCovers">312</div>
-          <div class="metric-label">covers expected</div>
-          <div class="metric-sub" id="metricCoversSub">287–337 range · 395 usual</div>
+          <div class="metric-label">covers expected tomorrow</div>
+          <div class="metric-sub" id="metricCoversSub">likely 287–337 · usually 395</div>
         </div>
         <div class="metric-divider"></div>
         <div class="metric">
           <div class="metric-val" id="metricOrder">€541</div>
-          <div class="metric-label">supplier order</div>
-          <div class="metric-sub" id="metricOrderSub">vs. €787 usual</div>
+          <div class="metric-label">tomorrow’s order total</div>
+          <div class="metric-sub" id="metricOrderSub">instead of €787 usual</div>
         </div>
         <div class="metric-divider"></div>
         <div class="metric">
           <div class="metric-val emerald" id="metricSaved">−€246</div>
           <div class="metric-label" id="metricSavedLabel">waste avoided</div>
-          <div class="metric-sub" id="metricSavedSub">−31.3% tonight</div>
+          <div class="metric-sub" id="metricSavedSub">−31.3% food spend</div>
         </div>
       </div>
 
-      <!-- Minimalist Single Forecast Comparison Line -->
-      <div class="scale-wrap" aria-label="Forecast vs habitual cover comparison">
-        <div class="scale-track">
-          <div class="scale-ci" id="scaleCi"></div>
-          <div class="scale-point cc" id="scaleCc">
-            <span class="scale-tip cc-tip" id="scaleCcTip">312</span>
-          </div>
-          <div class="scale-point habit" id="scaleHabit">
-            <span class="scale-tip habit-tip" id="scaleHabitTip">395 usual</span>
-          </div>
+      <!-- Beautiful, Clear Forecast vs. Usual Visual Bar -->
+      <div class="forecast-visual">
+        <div class="fv-header">
+          <span class="fv-legend-item">
+            <span class="fv-dot emerald-dot"></span>
+            CoverCast forecast: <strong id="fvCcText">312 covers (287–337)</strong>
+          </span>
+          <span class="fv-gap-badge" id="fvGapBadge">−83 covers vs. usual</span>
+          <span class="fv-legend-item">
+            <span class="fv-dot rose-dot"></span>
+            Karim’s usual guess: <strong id="fvHabitText">395</strong>
+          </span>
+        </div>
+        <div class="fv-track">
+          <div class="fv-gap-bar" id="fvGapBar"></div>
+          <div class="fv-ci-band" id="fvCiBand"></div>
+          <div class="fv-marker cc" id="fvCcMarker"></div>
+          <div class="fv-marker habit" id="fvHabitMarker"></div>
         </div>
       </div>
 
-      <!-- 1 Crisp Human Explanation Sentence -->
-      <p class="why-line" id="whyLine">
-        Heavy rain closes the terrace (−88 walk-ins), partly offset by the Porte de Versailles trade show (+28).
-      </p>
+      <!-- Clear, Scannable "Why" Driver Pills + 1 Crisp Sentence -->
+      <div class="why-block">
+        <div class="why-pills" id="whyPills"></div>
+        <p class="why-sentence" id="whyLine"></p>
+      </div>
     </section>
 
-    <!-- 2. THE REAL LLM MAGIC MOMENT: CHEF VOICE / TEXT COMMAND BAR -->
+    <!-- 2. CHEF VOICE & TEXT COMMAND BAR (THE REAL LLM LAYER) -->
     <section class="copilot-section">
       <form id="commandForm" class="command-bar">
-        <button type="button" id="micBtn" class="mic-btn" title="Speak a kitchen note (Chrome/Edge voice input)" aria-label="Voice input">
-          🎙️
+        <button type="button" id="micBtn" class="mic-btn" title="Click and speak a kitchen update" aria-label="Voice input">
+          <span id="micIcon">🎙️</span>
         </button>
         <input
           type="text"
           id="commandInput"
           class="command-input"
-          placeholder="Tell CoverCast anything before sending… (e.g., “group of 25 just booked” or “swap cod to sea bass”)"
+          placeholder="Speak or type any last-minute kitchen update… (e.g., “group of 25 just booked”)"
           autocomplete="off"
         />
-        <button type="submit" id="commandSubmitBtn" class="apply-btn">Update</button>
+        <button type="button" id="micLangBtn" class="lang-btn" title="Switch voice recognition language">EN</button>
+        <button type="submit" id="commandSubmitBtn" class="apply-btn">Apply</button>
       </form>
 
-      <!-- 3 Instant 1-Click Kitchen Curveballs for Live Demo -->
+      <!-- Live Speech Transcript Bar (Visible while speaking or if mic feedback needed) -->
+      <div class="voice-transcript-bar" id="voiceBar" hidden>
+        <span class="voice-pulse"></span>
+        <span class="voice-status" id="voiceStatusText">Listening…</span>
+        <span class="voice-live-words" id="voiceLiveWords"></span>
+      </div>
+
+      <!-- 3 Instant 1-Click Demo Curveballs -->
       <div class="quick-prompts">
+        <span class="quick-label">Try saying / clicking:</span>
         <button type="button" class="prompt-pill" data-cmd="Group of 25 just booked for tomorrow">
           “Group of 25 just booked”
         </button>
@@ -153,57 +174,76 @@
         </button>
       </div>
 
-      <!-- Clean 1-Line AI Reply Strip (Visible when a Chef Command runs) -->
-      <div class="ai-reply" id="aiReplyBox" hidden>
-        <div class="ai-reply-left">
-          <span class="ai-spark">✦</span>
-          <span id="aiReplyText"></span>
+      <!-- Crystal-Clear AI Diff Card (Shows EXACTLY what AI changed + Undo) -->
+      <div class="ai-diff-card" id="aiDiffCard" hidden>
+        <div class="ai-diff-top">
+          <div class="ai-diff-headline">
+            <span class="ai-spark">✦ AI updated your order</span>
+            <span class="ai-heard" id="aiHeardQuote"></span>
+          </div>
+          <div class="ai-diff-actions">
+            <span class="ai-cost-mini" id="aiCostMini">$0.000345</span>
+            <button type="button" id="undoCmdBtn" class="undo-btn">↺ Undo AI change</button>
+          </div>
         </div>
-        <div class="ai-reply-right">
-          <span class="ai-cost-mini" id="aiCostMini">$0.000345</span>
-          <button type="button" id="undoCmdBtn" class="link-btn">Undo</button>
-        </div>
+        <div class="ai-diff-pills" id="aiDiffPills"></div>
       </div>
     </section>
 
-    <!-- 3. CLEAN 6-ROW ORDER LIST (4 THINGS PER ROW) -->
+    <!-- 3. CLEAR 6-ROW SHOPPING LIST WITH SELF-EXPLANATORY COLUMN HEADERS -->
     <section class="order-card">
       <div class="order-card-head">
-        <span>Tomorrow’s fresh order</span>
-        <button type="button" id="resetOrderBtn" class="link-btn" hidden>Reset changes</button>
+        <div>
+          <span class="order-title">Tomorrow’s 6 fresh ingredients</span>
+          <span class="order-hint">Fridge stock auto-calculated from yesterday’s delivery − tonight’s POS sales</span>
+        </div>
+        <button type="button" id="resetOrderBtn" class="link-btn" hidden>Reset all changes</button>
       </div>
+
+      <div class="order-col-headers">
+        <span>Ingredient &amp; Supplier</span>
+        <span class="col-center">Est. in Fridge (POS)</span>
+        <span class="col-center">Order Qty (Adjust)</span>
+        <span class="col-right">Line Cost &amp; Savings</span>
+      </div>
+
       <div class="order-rows" id="orderRows"></div>
     </section>
 
-    <!-- 4. SINGLE CLEAN SEND ACTION -->
+    <!-- 4. BIG GREEN SEND BUTTON -->
     <section class="send-footer" id="sendFooter">
       <div class="send-meta">
-        <span>Prepared in <strong id="prepTimer">00:32</strong> (vs. 45 min manual) · Chef sign-off required</span>
+        <span>Ready in <strong id="prepTimer">00:32</strong> (vs. 45 min manual) · Drafts &amp; sends 5 supplier emails</span>
       </div>
       <button type="button" id="sendOrderBtn" class="send-btn">
-        Send 5 Supplier Orders · <span id="sendTotalSpan">€541</span>
+        Draft &amp; Send 5 Supplier Emails · <span id="sendTotalSpan">€541</span>
       </button>
     </section>
 
-    <!-- 5. REALISTIC SUPPLIER MESSAGE PREVIEW (SHOWN AFTER CLICKING SEND) -->
+    <!-- 5. DRAFTED & SENT SUPPLIER EMAILS (WITH REAL MAILTO + VENDOR TABS) -->
     <section class="sent-card" id="sentCard" hidden>
       <div class="sent-head">
         <div class="sent-title-wrap">
           <span class="sent-check">✓</span>
           <div>
-            <h2 id="sentTitle">5 supplier orders sent (€541)</h2>
+            <h2 id="sentTitle">5 supplier emails drafted &amp; sent (€541)</h2>
             <p id="sentSubtitle"></p>
           </div>
         </div>
         <div class="sent-actions">
+          <a id="mailtoLinkBtn" class="emerald-btn" href="#">Open in Mail App ↗</a>
           <button type="button" id="downloadPoBtn" class="subtle-btn">Download .txt</button>
-          <button type="button" id="editOrderBtn" class="subtle-btn">Edit</button>
+          <button type="button" id="editOrderBtn" class="subtle-btn">← Edit order</button>
         </div>
       </div>
 
-      <!-- Realistic WhatsApp / Email Order Message Preview -->
       <div class="vendor-tabs" id="vendorTabs"></div>
-      <pre class="vendor-message" id="vendorMessagePreview"></pre>
+
+      <div class="email-preview-box">
+        <div class="email-meta-row"><span>To:</span> <strong id="emailToField"></strong></div>
+        <div class="email-meta-row"><span>Subject:</span> <strong id="emailSubjectField"></strong></div>
+        <pre class="email-body" id="vendorMessagePreview"></pre>
+      </div>
     </section>
   </main>
 
@@ -215,7 +255,7 @@
         <button type="button" id="closeModalBtn" class="close-x" aria-label="Close">×</button>
       </div>
       <p class="modal-desc">
-        Works 100% without setup using CoverCast’s built-in statistical + kitchen language parser. Paste an OpenAI, Gemini, or Anthropic key to run live API calls for chef commands:
+        Works 100% zero-setup out of the box. Paste an OpenAI, Gemini, or Anthropic key below to run live cloud LLM calls for chef voice/text commands:
       </p>
       <select id="providerSelect" class="modal-input">
         <option value="">Built-in Hybrid Engine (Zero-Setup Default)</option>
@@ -223,7 +263,7 @@
         <option value="gemini">Google Gemini — gemini-2.5-flash</option>
         <option value="anthropic">Anthropic — claude-3-5-haiku</option>
       </select>
-      <input type="password" id="apiKeyInput" class="modal-input" placeholder="Paste API key (kept in session memory only)" autocomplete="off" />
+      <input type="password" id="apiKeyInput" class="modal-input" placeholder="Paste API key (kept in memory only)" autocomplete="off" />
       <button type="button" id="saveLlmBtn" class="send-btn" style="width: 100%;">Save</button>
     </div>
   </div>

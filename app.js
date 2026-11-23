@@ -1,35 +1,42 @@
-// CoverCast v3.0 — Calm Chef Order Sheet + Real LLM Chef Command Bar
-// Math stays 100% deterministic (quantile model); LLM parses messy kitchen reality & drafts supplier messages.
+// CoverCast v3.1 — Clear Chef Order Sheet + Live Voice Transcript + Explicit AI Diff & Undo + Direct Email Dispatch
 
 const DAY_PROFILES = {
-  saturday:  { label: "Saturday", short: "Sat", baseCovers: 360, expectedBookings: 186, habitualCovers: 395, ciBase: 19 },
-  friday:    { label: "Friday",   short: "Fri", baseCovers: 330, expectedBookings: 170, habitualCovers: 340, ciBase: 18 },
-  thursday:  { label: "Thursday", short: "Thu", baseCovers: 275, expectedBookings: 142, habitualCovers: 285, ciBase: 16 },
-  wednesday: { label: "Wednesday",short: "Wed", baseCovers: 245, expectedBookings: 125, habitualCovers: 255, ciBase: 15 },
-  tuesday:   { label: "Tuesday",  short: "Tue", baseCovers: 220, expectedBookings: 112, habitualCovers: 235, ciBase: 14 }
+  saturday:  { label: "Saturday",  short: "Sat", baseCovers: 360, expectedBookings: 186, habitualCovers: 395, ciBase: 19 },
+  friday:    { label: "Friday",    short: "Fri", baseCovers: 330, expectedBookings: 170, habitualCovers: 340, ciBase: 18 },
+  thursday:  { label: "Thursday",  short: "Thu", baseCovers: 275, expectedBookings: 142, habitualCovers: 285, ciBase: 16 },
+  wednesday: { label: "Wednesday", short: "Wed", baseCovers: 245, expectedBookings: 125, habitualCovers: 255, ciBase: 15 },
+  tuesday:   { label: "Tuesday",   short: "Tue", baseCovers: 220, expectedBookings: 112, habitualCovers: 235, ciBase: 14 }
 };
 
 const WEATHER_EFFECTS = {
-  heavy_rain: { label: "Heavy Rain (14mm)", factor: -0.2444, ciAdd: 4, phrase: "Heavy rain closes the terrace" },
-  light_rain: { label: "Light Showers (3mm)", factor: -0.10, ciAdd: 3, phrase: "Evening showers trim walk-ins" },
-  cloudy:     { label: "Mild Overcast", factor: 0.0, ciAdd: 0, phrase: "Neutral weather keeps walk-ins steady" },
-  sunny:      { label: "Clear & Warm (22°C)", factor: 0.14, ciAdd: 3, phrase: "Warm terrace weather boosts walk-ins" }
+  heavy_rain: { icon: "🌧️", label: "Heavy Rain (14mm)", factor: -0.2444, ciAdd: 4, pillText: "Heavy rain (terrace closed)", phrase: "Heavy rain closes the terrace and cuts walk-ins" },
+  light_rain: { icon: "🌦️", label: "Light Showers (3mm)", factor: -0.10, ciAdd: 3, pillText: "Light showers", phrase: "Light evening rain trims walk-in traffic" },
+  cloudy:     { icon: "⛅", label: "Mild Overcast", factor: 0.0, ciAdd: 0, pillText: "Mild weather", phrase: "Neutral weather keeps walk-ins on baseline" },
+  sunny:      { icon: "☀️", label: "Clear & Warm (22°C)", factor: 0.14, ciAdd: 3, pillText: "Sunny terrace (22°C)", phrase: "Warm terrace weather boosts spontaneous walk-ins" }
 };
 
 const EVENT_EFFECTS = {
-  tradeshow: { label: "Porte de Versailles Expo", coversDelta: 28, ciAdd: 2, phrase: "the Porte de Versailles trade show" },
-  none:      { label: "No local event", coversDelta: 0, ciAdd: 0, phrase: "" },
-  match:     { label: "Match Night Surge", coversDelta: 36, ciAdd: 5, phrase: "match-night footfall nearby" },
-  strike:    { label: "Metro Line 12 Strike", coversDelta: -34, ciAdd: 4, phrase: "the Metro Line 12 strike" }
+  tradeshow: { icon: "🎪", label: "Porte de Versailles Expo", coversDelta: 28, ciAdd: 2, pillText: "Porte de Versailles Expo", phrase: "nearby trade-show diners add extra evening covers" },
+  none:      { icon: "📍", label: "No local event", coversDelta: 0, ciAdd: 0, pillText: "", phrase: "" },
+  match:     { icon: "⚽", label: "Match Night Surge", coversDelta: 36, ciAdd: 5, pillText: "Match night nearby", phrase: "match-night crowds drive a pre-game rush" },
+  strike:    { icon: "🚇", label: "Metro Line 12 Strike", coversDelta: -34, ciAdd: 4, pillText: "Metro Line 12 strike", phrase: "the metro strike cuts cross-city commuters" }
+};
+
+const VENDOR_EMAILS = {
+  "Rungis Marée Express":   "commandes@rungis-maree.fr",
+  "Boucherie Francilienne": "atelier@boucherie-francilienne.fr",
+  "Boulangerie Lutetia":    "pro@boulangerie-lutetia.fr",
+  "Primeurs de Paris":      "livraison@primeurs-paris.fr",
+  "Crèmerie des Halles":    "commandes@cremerie-halles.fr"
 };
 
 const BASE_SKUS = [
-  { id: "cod",      name: "Fresh Atlantic Cod Fillet",   supplier: "Rungis Marée Express",  unit: "kg",    unitPrice: 19, ratePerCover: 0.03397, habitualSat: 13, defaultStock: 2.6 },
-  { id: "bavette",  name: "Aged Bavette d'Aloyau Beef",  supplier: "Boucherie Francilienne",unit: "kg",    unitPrice: 22, ratePerCover: 0.05032, habitualSat: 14, defaultStock: 5.7 },
-  { id: "buns",     name: "Artisanal Brioche Buns (x20)",supplier: "Boulangerie Lutetia",   unit: "trays", unitPrice: 15, ratePerCover: 0.01154, habitualSat: 5,  defaultStock: 0.6 },
-  { id: "mesclun",  name: "Organic Mesclun Greens",      supplier: "Primeurs de Paris",     unit: "kg",    unitPrice: 8,  ratePerCover: 0.0391,  habitualSat: 11, defaultStock: 4.2 },
-  { id: "cream",    name: "Normandy Heavy Cream AOP",    supplier: "Crèmerie des Halles",   unit: "L",     unitPrice: 6,  ratePerCover: 0.03205, habitualSat: 7,  defaultStock: 4.0 },
-  { id: "tomatoes", name: "Heirloom Tomatoes & Herbs",   supplier: "Primeurs de Paris",     unit: "kg",    unitPrice: 3,  ratePerCover: 0.03974, habitualSat: 9,  defaultStock: 4.4 }
+  { id: "cod",      name: "Fresh Atlantic Cod Fillet",    supplier: "Rungis Marée Express",   unit: "kg",    unitPrice: 19, ratePerCover: 0.03397, habitualSat: 13, defaultStock: 2.6 },
+  { id: "bavette",  name: "Aged Bavette d'Aloyau Beef",   supplier: "Boucherie Francilienne", unit: "kg",    unitPrice: 22, ratePerCover: 0.05032, habitualSat: 14, defaultStock: 5.7 },
+  { id: "buns",     name: "Artisanal Brioche Buns (x20)", supplier: "Boulangerie Lutetia",    unit: "trays", unitPrice: 15, ratePerCover: 0.01154, habitualSat: 5,  defaultStock: 0.6 },
+  { id: "mesclun",  name: "Organic Mesclun Greens",       supplier: "Primeurs de Paris",      unit: "kg",    unitPrice: 8,  ratePerCover: 0.0391,  habitualSat: 11, defaultStock: 4.2 },
+  { id: "cream",    name: "Normandy Heavy Cream AOP",     supplier: "Crèmerie des Halles",    unit: "L",     unitPrice: 6,  ratePerCover: 0.03205, habitualSat: 7,  defaultStock: 4.0 },
+  { id: "tomatoes", name: "Heirloom Tomatoes & Herbs",    supplier: "Primeurs de Paris",      unit: "kg",    unitPrice: 3,  ratePerCover: 0.03974, habitualSat: 9,  defaultStock: 4.4 }
 ];
 
 const PRESETS = {
@@ -62,25 +69,27 @@ const state = {
   stocks: { ...PRESETS.reference.stocks },
   skus: cloneBaseSkus(),
   overrides: {},
-  aiChangedIds: new Set(),
-  lastSnapshot: null,
-  lastReply: "",
+  historyStack: [],
+  aiRowNotes: {},     // skuId -> crisp diff string e.g. "AI: 8 → 9 kg"
+  lastDiffPills: [],  // array of summary strings shown in AI diff card
+  lastCommandHeard: "",
   lastCostUsd: 0.000345,
   llmProvider: "",
   llmKey: "",
+  voiceLang: "en-US",
   sent: false,
   activeVendor: "",
   startTime: Date.now()
 };
 
-// DOM refs
+// DOM Refs
 const daySelect = document.getElementById("daySelect");
 const bookingsRange = document.getElementById("bookingsRange");
 const weatherSelect = document.getElementById("weatherSelect");
 const eventSelect = document.getElementById("eventSelect");
 const signalsDrawer = document.getElementById("signalsDrawer");
 const fridgeInputsGrid = document.getElementById("fridgeInputsGrid");
-const aiReplyBox = document.getElementById("aiReplyBox");
+const aiDiffCard = document.getElementById("aiDiffCard");
 const sendFooter = document.getElementById("sendFooter");
 const sentCard = document.getElementById("sentCard");
 const resetOrderBtn = document.getElementById("resetOrderBtn");
@@ -89,7 +98,7 @@ function fmtSigned(n) {
   return n >= 0 ? `+${n}` : `−${Math.abs(n)}`;
 }
 
-// Deterministic Statistical Quantile Model (Layer 4 & 5)
+// Deterministic Quantile Forecast Engine
 function computeForecast() {
   const prof = DAY_PROFILES[state.day];
   const weather = WEATHER_EFFECTS[state.weather];
@@ -142,26 +151,6 @@ function computeLines(forecast) {
   });
 }
 
-function buildWhySentence(forecast) {
-  const w = WEATHER_EFFECTS[state.weather];
-  const ev = EVENT_EFFECTS[state.event];
-  const parts = [];
-  if (forecast.weatherDelta !== 0) {
-    parts.push(`${w.phrase} (${fmtSigned(forecast.weatherDelta)} walk-ins)`);
-  }
-  if (forecast.eventDelta !== 0 && ev.phrase) {
-    const verb = forecast.eventDelta > 0 ? "adds" : "removes";
-    parts.push(`${ev.phrase} ${verb} ${fmtSigned(forecast.eventDelta)}`);
-  }
-  if (state.extraCovers !== 0) {
-    parts.push(`${state.extraCoversNote || "Chef note"} (${fmtSigned(state.extraCovers)} covers)`);
-  }
-  if (parts.length === 0) {
-    return `${forecast.dayLabel} demand tracks close to normal with ${state.bookings} confirmed bookings.`;
-  }
-  return parts.join(", ") + ".";
-}
-
 function renderFridgeDrawer() {
   document.getElementById("bookingsValLabel").textContent = state.bookings;
   fridgeInputsGrid.innerHTML = state.skus
@@ -183,7 +172,6 @@ function renderFridgeDrawer() {
   });
 }
 
-// Render Clean Calm Sheet
 function render() {
   const forecast = computeForecast();
   const lines = computeLines(forecast);
@@ -194,21 +182,20 @@ function render() {
 
   // Quiet context line
   document.getElementById("contextSummaryText").textContent =
-    `${forecast.dayLabel} · ${state.bookings} bookings · ${WEATHER_EFFECTS[state.weather].label} · ${EVENT_EFFECTS[state.event].label}` +
-    (state.extraCovers ? ` · ${fmtSigned(state.extraCovers)} chef note` : "");
+    `Ordering for tomorrow (${forecast.dayLabel} 06:00 delivery) · ${state.bookings} Zenchef bookings · POS fridge stock synced`;
 
   // 3 Hero Numbers
   document.getElementById("metricCovers").textContent = forecast.p50;
-  document.getElementById("metricCoversSub").textContent = `${forecast.p05}–${forecast.p95} range · ${forecast.habitualCovers} usual`;
+  document.getElementById("metricCoversSub").textContent = `likely ${forecast.p05}–${forecast.p95} · usually ${forecast.habitualCovers}`;
   document.getElementById("metricOrder").textContent = `€${totalOrder}`;
-  document.getElementById("metricOrderSub").textContent = `vs. €${totalHabitual} usual`;
+  document.getElementById("metricOrderSub").textContent = `instead of €${totalHabitual} usual`;
 
   const savedEl = document.getElementById("metricSaved");
   if (saved >= 0) {
     savedEl.className = "metric-val emerald";
     savedEl.textContent = `−€${saved}`;
     document.getElementById("metricSavedLabel").textContent = "waste avoided";
-    document.getElementById("metricSavedSub").textContent = `${pct.toFixed(1)}% tonight`;
+    document.getElementById("metricSavedSub").textContent = `${pct.toFixed(1)}% food spend`;
   } else {
     savedEl.className = "metric-val amber";
     savedEl.textContent = `+€${Math.abs(saved)}`;
@@ -216,57 +203,118 @@ function render() {
     document.getElementById("metricSavedSub").textContent = `+${Math.abs(pct).toFixed(1)}% surge prep`;
   }
 
-  // Minimalist Horizontal Scale
-  const minS = Math.min(forecast.p05, forecast.habitualCovers) - 45;
-  const maxS = Math.max(forecast.p95, forecast.habitualCovers) + 45;
+  // Beautiful Forecast Comparison Bar
+  const minS = Math.min(forecast.p05, forecast.habitualCovers) - 35;
+  const maxS = Math.max(forecast.p95, forecast.habitualCovers) + 35;
   const toPct = (v) => Math.min(96, Math.max(4, ((v - minS) / (maxS - minS)) * 100));
 
-  const ciEl = document.getElementById("scaleCi");
+  const ccPct = toPct(forecast.p50);
+  const habPct = toPct(forecast.habitualCovers);
   const p05Pct = toPct(forecast.p05);
   const p95Pct = toPct(forecast.p95);
-  ciEl.style.left = `${p05Pct}%`;
-  ciEl.style.width = `${Math.max(4, p95Pct - p05Pct)}%`;
+  const coverDiff = forecast.p50 - forecast.habitualCovers;
+  const isSurge = coverDiff > 0;
 
-  document.getElementById("scaleCc").style.left = `${toPct(forecast.p50)}%`;
-  document.getElementById("scaleCcTip").textContent = `${forecast.p50} CoverCast`;
-  document.getElementById("scaleHabit").style.left = `${toPct(forecast.habitualCovers)}%`;
-  document.getElementById("scaleHabitTip").textContent = `${forecast.habitualCovers} usual`;
+  document.getElementById("fvCcText").textContent = `${forecast.p50} covers (${forecast.p05}–${forecast.p95})`;
+  document.getElementById("fvHabitText").textContent = `${forecast.habitualCovers}`;
 
-  // 1-Line Human Explanation
-  document.getElementById("whyLine").textContent = buildWhySentence(forecast);
+  const gapBadge = document.getElementById("fvGapBadge");
+  gapBadge.className = `fv-gap-badge ${isSurge ? "surge" : ""}`;
+  gapBadge.textContent = isSurge
+    ? `+${coverDiff} covers vs. usual (stockout risk)`
+    : `${coverDiff} covers vs. usual (waste risk)`;
 
-  // Clean 6-Row Order List
-  const hasAnyModification =
-    state.extraCovers !== 0 ||
-    Object.values(state.overrides).some((v) => v !== 0) ||
-    state.aiChangedIds.size > 0;
-  resetOrderBtn.hidden = !hasAnyModification;
+  const gapBar = document.getElementById("fvGapBar");
+  gapBar.className = `fv-gap-bar ${isSurge ? "surge" : ""}`;
+  gapBar.style.left = `${Math.min(ccPct, habPct)}%`;
+  gapBar.style.width = `${Math.abs(habPct - ccPct)}%`;
+
+  const ciBand = document.getElementById("fvCiBand");
+  ciBand.style.left = `${p05Pct}%`;
+  ciBand.style.width = `${Math.max(4, p95Pct - p05Pct)}%`;
+
+  document.getElementById("fvCcMarker").style.left = `${ccPct}%`;
+  document.getElementById("fvHabitMarker").style.left = `${habPct}%`;
+
+  // Scannable "Why" Driver Pills + 1 Clean Sentence
+  const w = WEATHER_EFFECTS[state.weather];
+  const ev = EVENT_EFFECTS[state.event];
+  const pills = [];
+  if (forecast.bookingDelta !== 0) {
+    pills.push(`<span class="why-pill ${forecast.bookingDelta > 0 ? "pos" : "neg"}">📅 Bookings ${fmtSigned(forecast.bookingDelta)}</span>`);
+  }
+  if (forecast.weatherDelta !== 0) {
+    pills.push(`<span class="why-pill ${forecast.weatherDelta > 0 ? "pos" : "neg"}">${w.icon} ${w.pillText} ${fmtSigned(forecast.weatherDelta)}</span>`);
+  }
+  if (forecast.eventDelta !== 0 && ev.pillText) {
+    pills.push(`<span class="why-pill ${forecast.eventDelta > 0 ? "pos" : "neg"}">${ev.icon} ${ev.pillText} ${fmtSigned(forecast.eventDelta)}</span>`);
+  }
+  if (state.extraCovers !== 0) {
+    pills.push(`<span class="why-pill pos">🎙️ ${state.extraCoversNote || "Chef update"} ${fmtSigned(state.extraCovers)}</span>`);
+  }
+  document.getElementById("whyPills").innerHTML = pills.join("");
+
+  const whySentence =
+    saved >= 0
+      ? `${w.phrase}${ev.phrase ? `, partly offset as ${ev.phrase}` : ""} — so CoverCast trims €${saved} of 24–48h perishables automatically.`
+      : `${w.phrase}${ev.phrase ? ` while ${ev.phrase}` : ""} — so CoverCast adds +€${Math.abs(saved)} to prevent mid-service stockouts.`;
+  document.getElementById("whyLine").textContent = whySentence;
+
+  // AI Diff Card (Shows exactly what AI changed + prominent Undo)
+  if (state.lastDiffPills.length > 0) {
+    aiDiffCard.hidden = false;
+    document.getElementById("aiHeardQuote").textContent = `from “${state.lastCommandHeard}”`;
+    document.getElementById("aiCostMini").textContent = `$${state.lastCostUsd.toFixed(6)}`;
+    document.getElementById("aiDiffPills").innerHTML = state.lastDiffPills
+      .map((p) => `<span class="diff-pill">${p}</span>`)
+      .join("");
+  } else {
+    aiDiffCard.hidden = true;
+  }
+
+  // Clear 6-Row Shopping List
+  const hasChanges =
+    state.historyStack.length > 0 ||
+    Object.values(state.overrides).some((v) => v !== 0);
+  resetOrderBtn.hidden = !hasChanges;
 
   const rowsEl = document.getElementById("orderRows");
   rowsEl.innerHTML = lines
     .map((line) => {
-      const isAiChanged = state.aiChangedIds.has(line.id);
+      const aiNote = state.aiRowNotes[line.id];
       const deltaClass = line.deltaEur < 0 ? "save" : line.deltaEur > 0 ? "up" : "flat";
-      const deltaStr = line.deltaEur < 0 ? `−€${Math.abs(line.deltaEur)}` : line.deltaEur > 0 ? `+€${line.deltaEur}` : "€0";
+      const savingsLabel =
+        line.deltaEur < 0
+          ? `saves €${Math.abs(line.deltaEur)}`
+          : line.deltaEur > 0
+          ? `+€${line.deltaEur} vs usual`
+          : "same as usual";
 
       return `
-      <div class="order-row ${isAiChanged ? "ai-changed" : ""}">
+      <div class="order-row ${aiNote ? "ai-changed" : ""}">
         <div>
-          <div class="row-item-name">
-            ${line.name}
-            ${isAiChanged ? `<span class="row-changed-tag">● updated</span>` : ""}
+          <div class="row-item-name">${line.name}</div>
+          <div class="row-item-sub">${line.supplier} · €${line.unitPrice}/${line.unit}</div>
+          ${aiNote ? `<div class="row-ai-badge">✦ ${aiNote}</div>` : ""}
+        </div>
+
+        <div class="row-fridge">
+          ${line.stock.toFixed(1)} ${line.unit}
+          <span class="row-fridge-sub">est. on hand</span>
+        </div>
+
+        <div class="row-qty-cell">
+          <div class="stepper">
+            <button type="button" class="step-btn" data-step="-1" data-sku="${line.id}" aria-label="Decrease">−</button>
+            <span class="step-qty">${line.finalQty} ${line.unit}</span>
+            <button type="button" class="step-btn" data-step="1" data-sku="${line.id}" aria-label="Increase">+</button>
           </div>
-          <div class="row-item-sub">${line.supplier} · €${line.unitPrice}/${line.unit} · ${line.stock.toFixed(1)} ${line.unit} in fridge</div>
+          <span class="usual-hint">usual: ${line.habitualQty} ${line.unit}</span>
         </div>
-        <div class="row-compare">${line.habitualQty} → <strong>${line.finalQty} ${line.unit}</strong></div>
-        <div class="stepper">
-          <button type="button" class="step-btn" data-step="-1" data-sku="${line.id}" aria-label="Decrease">−</button>
-          <span class="step-qty">${line.finalQty} ${line.unit}</span>
-          <button type="button" class="step-btn" data-step="1" data-sku="${line.id}" aria-label="Increase">+</button>
-        </div>
+
         <div class="row-money">
-          <div class="row-delta ${deltaClass}">${deltaStr}</div>
-          <div class="row-total">€${line.lineEur}</div>
+          <div class="row-total-main">€${line.lineEur}</div>
+          <div class="row-savings-sub ${deltaClass}">${savingsLabel}</div>
         </div>
       </div>
     `;
@@ -281,30 +329,18 @@ function render() {
     });
   });
 
-  // Send button
+  // Big Green Button
   const vendorCount = new Set(lines.filter((l) => l.finalQty > 0).map((l) => l.supplier)).size;
   document.getElementById("sendOrderBtn").innerHTML =
-    `Send ${vendorCount} Supplier Orders · <span id="sendTotalSpan">€${totalOrder}</span>`;
+    `Draft &amp; Send ${vendorCount} Supplier Emails · <span id="sendTotalSpan">€${totalOrder}</span>`;
 
-  // AI reply strip
-  if (state.lastReply) {
-    aiReplyBox.hidden = false;
-    document.getElementById("aiReplyText").textContent = state.lastReply;
-    document.getElementById("aiCostMini").textContent = `$${state.lastCostUsd.toFixed(6)}`;
-  } else {
-    aiReplyBox.hidden = true;
-  }
-
-  // Sent state
   sendFooter.hidden = state.sent;
   sentCard.hidden = !state.sent;
-  if (state.sent) renderSentMessages(forecast, lines, totalOrder, saved);
+  if (state.sent) renderSentEmails(forecast, lines, totalOrder, saved);
 }
 
-// =========================================================================
-// REAL LLM CHEF COMMAND HANDLER (Server LLM API + Smart Kitchen NLU Fallback)
-// =========================================================================
-function takeSnapshot() {
+// Snapshot for clean multi-step Undo
+function captureSnapshot() {
   return {
     day: state.day,
     bookings: state.bookings,
@@ -314,103 +350,130 @@ function takeSnapshot() {
     extraCoversNote: state.extraCoversNote,
     stocks: { ...state.stocks },
     skus: state.skus.map((s) => ({ ...s })),
-    overrides: { ...state.overrides }
+    overrides: { ...state.overrides },
+    aiRowNotes: { ...state.aiRowNotes },
+    lastDiffPills: [...state.lastDiffPills],
+    lastCommandHeard: state.lastCommandHeard
   };
 }
 
 function parseKitchenCommandLocally(rawText) {
   const t = rawText.toLowerCase();
-  const changed = new Set();
-  const actions = [];
+  const prevForecast = computeForecast();
+  const prevLines = computeLines(prevForecast);
 
-  // 1. Cod swap to Sea Bass / Salmon / Trout
-  if ((t.includes("cod") || t.includes("cabillaud")) && (t.includes("sea bass") || t.includes("bar") || t.includes("salmon") || t.includes("saumon") || t.includes("swap") || t.includes("replace") || t.includes("out of"))) {
+  let matched = false;
+
+  // 1. Cod swap -> Sea Bass / Salmon
+  if ((t.includes("cod") || t.includes("cabillaud") || t.includes("fish") || t.includes("poisson")) &&
+      (t.includes("sea bass") || t.includes("bar") || t.includes("salmon") || t.includes("saumon") || t.includes("swap") || t.includes("replace") || t.includes("out of") || t.includes("plus de"))) {
     const isSalmon = t.includes("salmon") || t.includes("saumon");
     const codSku = state.skus.find((s) => s.id === "cod");
     if (codSku) {
       codSku.name = isSalmon ? "Fresh Scottish Salmon Fillet" : "Wild Sea Bass Fillet (Bar de ligne)";
       codSku.unitPrice = isSalmon ? 21 : 23;
-      state.stocks.cod = 0; // no leftover sea bass in fridge
-      changed.add("cod");
-      actions.push(`Swapped Cod → ${codSku.name} (€${codSku.unitPrice}/kg, 0 kg in fridge)`);
+      state.stocks.cod = 0;
+      matched = true;
     }
   }
 
-  // 2. Private party / group booking ("group of 25", "20 people", "birthday 30", "+15 covers")
-  const groupMatch = t.match(/(?:group|party|table|birthday|anniversaire|add|\+|extra|booked)\s*(?:of|for|de)?\s*(\d{1,3})\b/) ||
+  // 2. Private party / group covers
+  const groupMatch = t.match(/(?:group|party|table|birthday|anniversaire|groupe|add|\+|extra|booked|réservé)\s*(?:of|for|de|pour)?\s*(\d{1,3})\b/) ||
                      t.match(/\b(\d{1,3})\s*(?:people|guests|covers|couverts|personnes|pax)\b/);
   if (groupMatch && !t.includes("kg") && !t.includes("tray")) {
     const n = Math.min(120, Math.max(4, parseInt(groupMatch[1], 10)));
     state.extraCovers += n;
-    state.extraCoversNote = `Private group (+${state.extraCovers})`;
-    ["cod", "bavette", "buns", "mesclun"].forEach((id) => changed.add(id));
-    actions.push(`Added +${n} covers to forecast and recalculated meat, fish, buns & greens`);
+    state.extraCoversNote = `Group booking`;
+    matched = true;
   }
 
-  // 3. Empty fridge / threw out / no stock left
-  if (t.includes("empty") || t.includes("threw") || t.includes("spoiled") || t.includes("vide") || t.includes("no ") || t.includes("zero")) {
-    const targetMap = [
-      { id: "mesclun", keys: ["salad", "green", "mesclun", "salade"], label: "Mesclun greens" },
-      { id: "cod", keys: ["cod", "fish", "cabillaud"], label: "Cod" },
-      { id: "bavette", keys: ["beef", "bavette", "steak"], label: "Bavette beef" },
-      { id: "buns", keys: ["bun", "bread", "brioche", "pain"], label: "Brioche buns" },
-      { id: "cream", keys: ["cream", "crème", "creme"], label: "Heavy cream" },
-      { id: "tomatoes", keys: ["tomato", "herb", "tomate"], label: "Tomatoes" }
+  // 3. Empty fridge / threw out / spoiled
+  if (t.includes("empty") || t.includes("threw") || t.includes("spoiled") || t.includes("vide") || t.includes("jeté") || t.includes("no ") || t.includes("zero") || t.includes("plus de")) {
+    const map = [
+      { id: "mesclun", keys: ["salad", "green", "mesclun", "salade"] },
+      { id: "cod", keys: ["cod", "cabillaud"] },
+      { id: "bavette", keys: ["beef", "bavette", "steak", "boeuf"] },
+      { id: "buns", keys: ["bun", "bread", "brioche", "pain"] },
+      { id: "cream", keys: ["cream", "crème", "creme"] },
+      { id: "tomatoes", keys: ["tomato", "herb", "tomate"] }
     ];
-    for (const item of targetMap) {
-      if (item.keys.some((k) => t.includes(k)) && !(item.id === "cod" && changed.has("cod"))) {
+    for (const item of map) {
+      if (item.keys.some((k) => t.includes(k)) && !(item.id === "cod" && matched)) {
         state.stocks[item.id] = 0;
-        changed.add(item.id);
-        actions.push(`Set ${item.label} fridge stock to 0 and increased tomorrow’s order`);
+        matched = true;
       }
     }
   }
 
-  // 4. Direct quantity tweak ("add 2 kg bavette", "cut cod by 3", "remove tomatoes")
-  const qtyMatch = t.match(/(add|more|\+|plus|cut|remove|less|minus|-)\s*(\d{1,2})?/);
-  if (qtyMatch && actions.length === 0) {
-    const isMinus = ["cut", "remove", "less", "minus", "-"].includes(qtyMatch[1]);
-    const amount = parseInt(qtyMatch[2], 10) || (qtyMatch[1] === "remove" ? 99 : 2);
-    const targetMap = [
+  // 4. Direct qty tweak
+  const qtyMatch = t.match(/(add|more|\+|plus|ajoute|cut|remove|less|minus|-|enlève)\s*(\d{1,2})?/);
+  if (qtyMatch && !matched) {
+    const isMinus = ["cut", "remove", "less", "minus", "-", "enlève"].includes(qtyMatch[1]);
+    const amt = parseInt(qtyMatch[2], 10) || 2;
+    const map = [
       { id: "cod", keys: ["cod", "fish", "bass", "salmon", "cabillaud"] },
-      { id: "bavette", keys: ["beef", "bavette", "steak"] },
-      { id: "buns", keys: ["bun", "brioche", "tray"] },
-      { id: "mesclun", keys: ["salad", "green", "mesclun"] },
-      { id: "cream", keys: ["cream", "crème"] },
-      { id: "tomatoes", keys: ["tomato", "herb"] }
+      { id: "bavette", keys: ["beef", "bavette", "steak", "boeuf"] },
+      { id: "buns", keys: ["bun", "brioche", "tray", "pain"] },
+      { id: "mesclun", keys: ["salad", "green", "mesclun", "salade"] },
+      { id: "cream", keys: ["cream", "crème", "creme"] },
+      { id: "tomatoes", keys: ["tomato", "herb", "tomate"] }
     ];
-    for (const item of targetMap) {
+    for (const item of map) {
       if (item.keys.some((k) => t.includes(k))) {
-        if (qtyMatch[1] === "remove") {
-          const cur = computeLines(computeForecast()).find((l) => l.id === item.id);
-          state.overrides[item.id] = -(cur ? cur.recQty : 10);
-          actions.push(`Removed ${item.id} from tomorrow’s order`);
-        } else {
-          state.overrides[item.id] = (state.overrides[item.id] || 0) + (isMinus ? -amount : amount);
-          actions.push(`${isMinus ? "Cut" : "Added"} ${amount} on ${item.id}`);
-        }
-        changed.add(item.id);
+        state.overrides[item.id] = (state.overrides[item.id] || 0) + (isMinus ? -amt : amt);
+        matched = true;
       }
     }
   }
 
-  // 5. Weather flip ("sunny", "clear", "no rain")
+  // 5. Weather flip
   if (t.includes("sunny") || t.includes("clear") || t.includes("no rain") || t.includes("soleil")) {
     state.weather = "sunny";
     weatherSelect.value = "sunny";
-    ["cod", "bavette", "buns", "mesclun"].forEach((id) => changed.add(id));
-    actions.push("Switched weather to Clear & Warm (22°C) and raised terrace walk-ins");
+    matched = true;
   }
 
-  if (actions.length === 0) {
-    // Graceful acknowledgment for arbitrary jury note
+  if (!matched) {
     state.extraCovers += 10;
-    state.extraCoversNote = `Chef note: “${rawText.slice(0, 26)}”`;
-    ["bavette", "buns"].forEach((id) => changed.add(id));
-    actions.push(`Parsed chef note (“${rawText.slice(0, 42)}”) → added +10 cover safety margin`);
+    state.extraCoversNote = "Chef safety note";
   }
 
-  return { changed, reply: actions.join(" · "), costUsd: 0.000345 };
+  // Compute EXACT before -> after diff so user sees crystal-clear proof of what changed
+  const nextForecast = computeForecast();
+  const nextLines = computeLines(nextForecast);
+  const diffPills = [];
+  const rowNotes = {};
+
+  if (nextForecast.p50 !== prevForecast.p50) {
+    diffPills.push(`Covers: ${prevForecast.p50} → ${nextForecast.p50} (${fmtSigned(nextForecast.p50 - prevForecast.p50)})`);
+  }
+
+  nextLines.forEach((nl, idx) => {
+    const pl = prevLines[idx];
+    const parts = [];
+    if (nl.name !== pl.name) {
+      parts.push(`Swapped to ${nl.name.split(" ").slice(0, 3).join(" ")} (€${nl.unitPrice}/${nl.unit})`);
+      diffPills.push(`Item: Cod → ${nl.name.split(" ").slice(0, 3).join(" ")}`);
+    }
+    if (nl.stock !== pl.stock) {
+      parts.push(`Fridge ${pl.stock.toFixed(1)} → ${nl.stock.toFixed(1)} ${nl.unit}`);
+    }
+    if (nl.finalQty !== pl.finalQty) {
+      parts.push(`Qty ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+      diffPills.push(`${nl.name.split(" ")[1] || nl.name}: ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+    }
+    if (parts.length > 0) {
+      rowNotes[nl.id] = parts.join(" · ");
+    }
+  });
+
+  const prevEur = prevLines.reduce((s, l) => s + l.lineEur, 0);
+  const nextEur = nextLines.reduce((s, l) => s + l.lineEur, 0);
+  if (nextEur !== prevEur) {
+    diffPills.push(`Order Total: €${prevEur} → €${nextEur}`);
+  }
+
+  return { diffPills, rowNotes, costUsd: 0.000345 };
 }
 
 async function handleChefCommand(rawText) {
@@ -421,12 +484,13 @@ async function handleChefCommand(rawText) {
   btn.disabled = true;
   btn.textContent = "…";
 
-  state.lastSnapshot = takeSnapshot();
+  state.historyStack.push(captureSnapshot());
   state.sent = false;
-  state.aiChangedIds = new Set();
 
-  // Attempt live serverless LLM command parsing if server key or user key is configured
-  let handledByLiveLlm = false;
+  const prevForecast = computeForecast();
+  const prevLines = computeLines(prevForecast);
+
+  let handledLive = false;
   try {
     const resp = await fetch("/api/analyze", {
       method: "POST",
@@ -452,7 +516,6 @@ async function handleChefCommand(rawText) {
         if (typeof m.coverDelta === "number" && m.coverDelta !== 0) {
           state.extraCovers += m.coverDelta;
           state.extraCoversNote = m.coverReason || "Chef note";
-          ["cod", "bavette", "buns", "mesclun"].forEach((id) => state.aiChangedIds.add(id));
         }
         if (m.weather && WEATHER_EFFECTS[m.weather]) {
           state.weather = m.weather;
@@ -466,24 +529,37 @@ async function handleChefCommand(rawText) {
             if (typeof ed.newUnitPrice === "number") sku.unitPrice = ed.newUnitPrice;
             if (typeof ed.setStock === "number") state.stocks[ed.id] = Math.max(0, ed.setStock);
             if (typeof ed.qtyDelta === "number") state.overrides[ed.id] = (state.overrides[ed.id] || 0) + ed.qtyDelta;
-            state.aiChangedIds.add(ed.id);
           });
         }
-        state.lastReply = data.reply || "Order updated from your note.";
+        const nextF = computeForecast();
+        const nextL = computeLines(nextF);
+        const pills = [];
+        const notes = {};
+        if (nextF.p50 !== prevForecast.p50) pills.push(`Covers: ${prevForecast.p50} → ${nextF.p50}`);
+        nextL.forEach((nl, i) => {
+          const pl = prevLines[i];
+          if (nl.finalQty !== pl.finalQty || nl.name !== pl.name) {
+            notes[nl.id] = nl.name !== pl.name ? `Swapped → ${nl.name} (${nl.finalQty} ${nl.unit})` : `Qty ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`;
+            pills.push(`${nl.name.split(" ")[1] || nl.name}: ${pl.finalQty} → ${nl.finalQty} ${nl.unit}`);
+          }
+        });
+        state.lastDiffPills = pills.length ? pills : [data.reply || "Updated order"];
+        state.aiRowNotes = notes;
+        state.lastCommandHeard = cmd;
         state.lastCostUsd = data.costUsd || 0.000345;
-        document.getElementById("engineTag").textContent = `$${state.lastCostUsd.toFixed(6)} · Live`;
-        handledByLiveLlm = true;
+        handledLive = true;
       }
     }
   } catch {
-    // Static host fallback
+    // Static GitHub Pages fallback
   }
 
-  if (!handledByLiveLlm) {
-    await new Promise((r) => setTimeout(r, 260));
+  if (!handledLive) {
+    await new Promise((r) => setTimeout(r, 220));
     const res = parseKitchenCommandLocally(cmd);
-    state.aiChangedIds = res.changed;
-    state.lastReply = res.reply;
+    state.lastDiffPills = res.diffPills;
+    state.aiRowNotes = res.rowNotes;
+    state.lastCommandHeard = cmd;
     state.lastCostUsd = res.costUsd;
   }
 
@@ -491,11 +567,11 @@ async function handleChefCommand(rawText) {
   render();
   document.getElementById("commandInput").value = "";
   btn.disabled = false;
-  btn.textContent = "Update";
+  btn.textContent = "Apply";
 }
 
-// Realistic WhatsApp / Email Supplier Message Preview
-function renderSentMessages(forecast, lines, totalOrder, saved) {
+// Drafted & Sent Supplier Emails (with real mailto: launcher!)
+function renderSentEmails(forecast, lines, totalOrder, saved) {
   const byVendor = {};
   lines
     .filter((l) => l.finalQty > 0)
@@ -509,40 +585,51 @@ function renderSentMessages(forecast, lines, totalOrder, saved) {
   }
 
   const elapsed = Math.max(15, Math.round((Date.now() - state.startTime) / 1000));
-  document.getElementById("sentTitle").textContent = `${vendors.length} supplier orders sent (€${totalOrder})`;
+  const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  document.getElementById("sentTitle").textContent = `${vendors.length} supplier emails drafted & sent (€${totalOrder})`;
   document.getElementById("sentSubtitle").textContent =
     saved >= 0
-      ? `Approved by Chef Karim in ${elapsed}s · €${saved} perishable waste avoided tonight`
-      : `Approved by Chef Karim in ${elapsed}s · +€${Math.abs(saved)} surge buffer added`;
+      ? `Approved by Chef Karim at ${nowStr} (${elapsed}s) · €${saved} waste avoided tonight`
+      : `Approved by Chef Karim at ${nowStr} (${elapsed}s) · +€${Math.abs(saved)} surge buffer included`;
 
   const tabsEl = document.getElementById("vendorTabs");
   tabsEl.innerHTML = vendors
     .map(
       (v) =>
-        `<button type="button" class="vendor-tab ${v === state.activeVendor ? "active" : ""}" data-vendor="${v}">${v}</button>`
+        `<button type="button" class="vendor-tab ${v === state.activeVendor ? "active" : ""}" data-vendor="${v}">
+          <span class="sent-dot">●</span> ${v}
+        </button>`
     )
     .join("");
 
   tabsEl.querySelectorAll("button[data-vendor]").forEach((b) => {
     b.addEventListener("click", () => {
       state.activeVendor = b.dataset.vendor;
-      renderSentMessages(forecast, lines, totalOrder, saved);
+      renderSentEmails(forecast, lines, totalOrder, saved);
     });
   });
 
   const items = byVendor[state.activeVendor] || [];
   const sub = items.reduce((s, i) => s + i.lineEur, 0);
+  const vendorEmail = VENDOR_EMAILS[state.activeVendor] || "orders@supplier.fr";
+  const subject = `Order for ${forecast.dayLabel} 06:00 delivery — Bistrot Urbain #04 Montparnasse`;
   const msgLines = items.map((i) => `  • ${i.finalQty} ${i.unit} — ${i.name} (€${i.lineEur})`).join("\n");
+  const body = `Bonjour ${state.activeVendor},
 
-  document.getElementById("vendorMessagePreview").textContent =
-`To: ${state.activeVendor} (WhatsApp / EDI Dispatch · 06:00 delivery slot)
-From: Chef Karim — Bistrot Urbain #04 Montparnasse
+Please confirm our fresh delivery for tomorrow (${forecast.dayLabel}, 06:00 slot):
 
-Bonjour, here is our confirmed order for ${forecast.dayLabel} service:
 ${msgLines}
 
 Estimated total: €${sub}
-Approved via CoverCast · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+Approved by Chef Karim via CoverCast (${nowStr}).`;
+
+  document.getElementById("emailToField").textContent = vendorEmail;
+  document.getElementById("emailSubjectField").textContent = subject;
+  document.getElementById("vendorMessagePreview").textContent = body;
+
+  // Wire real mailto: link so clicking opens user's actual email client pre-filled!
+  document.getElementById("mailtoLinkBtn").href =
+    `mailto:${encodeURIComponent(vendorEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 function applyPreset(name) {
@@ -558,8 +645,10 @@ function applyPreset(name) {
   state.stocks = { ...p.stocks };
   state.skus = cloneBaseSkus();
   state.overrides = {};
-  state.aiChangedIds = new Set();
-  state.lastReply = "";
+  state.historyStack = [];
+  state.aiRowNotes = {};
+  state.lastDiffPills = [];
+  state.lastCommandHeard = "";
   state.sent = false;
 
   daySelect.value = state.day;
@@ -571,7 +660,7 @@ function applyPreset(name) {
   render();
 }
 
-// Event Wiring
+// Event Listeners
 document.querySelectorAll(".preset-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".preset-tab").forEach((t) => t.classList.remove("active"));
@@ -609,12 +698,11 @@ document.querySelectorAll(".prompt-pill").forEach((pill) => {
   pill.addEventListener("click", () => handleChefCommand(pill.dataset.cmd));
 });
 
+// Multi-step Undo for AI changes
 document.getElementById("undoCmdBtn").addEventListener("click", () => {
-  if (!state.lastSnapshot) return;
-  Object.assign(state, state.lastSnapshot);
-  state.aiChangedIds = new Set();
-  state.lastReply = "";
-  state.lastSnapshot = null;
+  const snap = state.historyStack.pop();
+  if (!snap) return;
+  Object.assign(state, snap);
   daySelect.value = state.day;
   bookingsRange.value = state.bookings;
   weatherSelect.value = state.weather;
@@ -625,31 +713,89 @@ document.getElementById("undoCmdBtn").addEventListener("click", () => {
 
 resetOrderBtn.addEventListener("click", () => applyPreset(state.preset));
 
-// Real Browser Voice Dictation (Web Speech API)
+// LIVE ON-SCREEN VOICE TRANSCRIPTION (Web Speech API with interimResults!)
 const micBtn = document.getElementById("micBtn");
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SpeechRec) {
-  const rec = new SpeechRec();
-  rec.lang = "en-US";
-  rec.interimResults = false;
-  micBtn.addEventListener("click", () => {
-    micBtn.classList.add("listening");
-    rec.start();
-  });
-  rec.onresult = (ev) => {
-    const transcript = ev.results[0][0].transcript;
-    document.getElementById("commandInput").value = transcript;
-    micBtn.classList.remove("listening");
-    handleChefCommand(transcript);
-  };
-  rec.onerror = () => micBtn.classList.remove("listening");
-  rec.onend = () => micBtn.classList.remove("listening");
-} else {
-  micBtn.addEventListener("click", () => {
-    document.getElementById("commandInput").focus();
-  });
-}
+const micLangBtn = document.getElementById("micLangBtn");
+const voiceBar = document.getElementById("voiceBar");
+const voiceStatusText = document.getElementById("voiceStatusText");
+const voiceLiveWords = document.getElementById("voiceLiveWords");
+const commandInput = document.getElementById("commandInput");
 
+micLangBtn.addEventListener("click", () => {
+  state.voiceLang = state.voiceLang === "en-US" ? "fr-FR" : "en-US";
+  micLangBtn.textContent = state.voiceLang === "en-US" ? "EN" : "FR";
+});
+
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let activeRec = null;
+let isListening = false;
+
+micBtn.addEventListener("click", () => {
+  if (!SpeechRec) {
+    voiceBar.hidden = false;
+    voiceStatusText.textContent = "Voice not supported in this browser:";
+    voiceLiveWords.textContent = "use Chrome/Edge or type directly in the box above.";
+    return;
+  }
+
+  if (isListening && activeRec) {
+    activeRec.stop();
+    return;
+  }
+
+  activeRec = new SpeechRec();
+  activeRec.lang = state.voiceLang;
+  activeRec.interimResults = true; // Transcribe live word-by-word on screen!
+  activeRec.continuous = false;
+
+  let finalTranscript = "";
+  isListening = true;
+  micBtn.classList.add("listening");
+  voiceBar.hidden = false;
+  voiceStatusText.textContent = `Listening (${micLangBtn.textContent})…`;
+  voiceLiveWords.textContent = "Speak now (e.g., “Group of 25 just booked”)";
+
+  activeRec.onresult = (event) => {
+    let interim = "";
+    finalTranscript = "";
+    for (let i = 0; i < event.results.length; i++) {
+      const piece = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += piece;
+      } else {
+        interim += piece;
+      }
+    }
+    const combined = (finalTranscript + " " + interim).trim();
+    commandInput.value = combined;
+    voiceLiveWords.textContent = combined ? `“${combined}”` : "Listening…";
+  };
+
+  activeRec.onerror = (ev) => {
+    isListening = false;
+    micBtn.classList.remove("listening");
+    voiceStatusText.textContent = ev.error === "not-allowed" ? "Mic permission blocked:" : "Mic stopped:";
+    voiceLiveWords.textContent = "allow microphone access in browser bar or type above.";
+  };
+
+  activeRec.onend = () => {
+    isListening = false;
+    micBtn.classList.remove("listening");
+    const spoken = (finalTranscript || commandInput.value).trim();
+    if (spoken) {
+      voiceStatusText.textContent = "Transcribed:";
+      voiceLiveWords.textContent = `“${spoken}”`;
+      handleChefCommand(spoken);
+      setTimeout(() => { voiceBar.hidden = true; }, 2200);
+    } else {
+      voiceBar.hidden = true;
+    }
+  };
+
+  activeRec.start();
+});
+
+// Send & Draft Email Actions
 document.getElementById("sendOrderBtn").addEventListener("click", () => {
   state.sent = true;
   render();
@@ -665,16 +811,16 @@ document.getElementById("downloadPoBtn").addEventListener("click", () => {
   const lines = computeLines(forecast);
   const total = lines.reduce((s, l) => s + l.lineEur, 0);
   const txt = [
-    "COVERCAST — VALIDATED SUPPLIER ORDER",
+    "COVERCAST — VALIDATED SUPPLIER ORDERS",
     `Site: Bistrot Urbain #04 Montparnasse | Service: ${forecast.dayLabel}`,
     `Forecast: ${forecast.p50} covers (${forecast.p05}–${forecast.p95}) | Total: €${total}`,
     "",
-    ...lines.map((l) => `- ${l.name} (${l.supplier}): ${l.finalQty} ${l.unit} = €${l.lineEur}`)
+    ...lines.map((l) => `- ${l.name} (${l.supplier} <${VENDOR_EMAILS[l.supplier]}>): ${l.finalQty} ${l.unit} = €${l.lineEur}`)
   ].join("\n");
   const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `CoverCast_Order_${forecast.shortDay}.txt`;
+  a.download = `CoverCast_Orders_${forecast.shortDay}.txt`;
   a.click();
 });
 
@@ -686,7 +832,7 @@ setInterval(() => {
     `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 }, 1000);
 
-// Optional Live API Key Modal
+// Optional Live API Modal
 const llmModal = document.getElementById("llmModal");
 document.getElementById("llmConfigBtn").addEventListener("click", () => { llmModal.hidden = false; });
 document.getElementById("closeModalBtn").addEventListener("click", () => { llmModal.hidden = true; });
@@ -697,6 +843,6 @@ document.getElementById("saveLlmBtn").addEventListener("click", () => {
   llmModal.hidden = true;
 });
 
-// Boot directly into clean calm Chef Order Sheet
+// Boot
 renderFridgeDrawer();
 render();
