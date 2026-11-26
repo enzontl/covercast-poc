@@ -3,349 +3,273 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoverCast — Chef Karim’s 22:45 Order</title>
+  <title>CoverCast — 6 PM Kitchen Prep Agent (Bistrot Urbain)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@400;500;700&family=Playfair+Display:ital,wght@1,500;1,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./supplier-agent.css" />
 </head>
-<body>
-  <!-- Minimal Top Header -->
+<body class="mode-demo">
+  <!-- Minimal Top Bar: Brand · Mode Toggle · Claude API -->
   <header class="topbar">
     <div class="brand">
-      <span class="logo-dot" aria-hidden="true">CC</span>
-      <span class="brand-name">CoverCast</span>
-      <span class="brand-sep">/</span>
-      <span class="brand-site">Bistrot Urbain #04 · Tonight 22:45</span>
+      <span class="brand-mark">COVERCAST</span>
+      <span class="brand-tag">BISTROT URBAIN #04 · 18:00</span>
     </div>
 
-    <nav class="presets-wrap" aria-label="Demo scenarios">
-      <span class="presets-label">Demo:</span>
-      <div class="presets">
-        <button type="button" class="preset-tab active" data-preset="reference">Sat · Rain</button>
-        <button type="button" class="preset-tab" data-preset="surge">Fri · Surge</button>
-        <button type="button" class="preset-tab" data-preset="strike">Tue · Strike</button>
-        <button type="button" class="preset-tab live-weather-tab" id="liveParisBtn" title="Fetch real tomorrow evening weather for Paris 15e via Open-Meteo">🌐 Live Paris</button>
-      </div>
-    </nav>
+    <div class="mode-switch" role="group" aria-label="Workspace mode">
+      <button type="button" id="normalModeBtn" class="mode-btn" aria-pressed="false">
+        Normal Mode
+      </button>
+      <button type="button" id="demoModeBtn" class="mode-btn active" aria-pressed="true">
+        <span class="mode-live-dot" aria-hidden="true"></span>
+        Demo Mode
+      </button>
+    </div>
 
-    <button type="button" id="claudeConfigBtn" class="api-btn" title="Connect your Anthropic Claude API key (Haiku, Sonnet, Opus, Fable)">
-      <span class="live-dot" id="claudeStatusDot"></span>
-      <span id="claudeStatusText">Claude API · Connect</span>
+    <button type="button" id="claudeConfigBtn" class="claude-btn" title="Enter API key (Anthropic, OpenAI, or Gemini)">
+      <span class="c-dot"></span>
+      <span id="claudeStatusText">API Key</span>
     </button>
   </header>
 
-  <!-- Calm Centered Chef Order Sheet -->
-  <main class="sheet">
-    <!-- Quiet 1-Line Context Strip + Progressive WOW Triggers -->
-    <div class="context-bar">
-      <div class="context-text" id="contextSummaryText">
-        Ordering for tomorrow (Saturday 06:00 delivery) · 198 Zenchef bookings · POS stock synced
-      </div>
-      <div class="context-actions">
-        <button type="button" id="toggleScorecardBtn" class="pill-toggle-btn">Last service: 97.8% accurate ▾</button>
-        <button type="button" id="toggleSignalsBtn" class="link-btn">Edit signals</button>
-      </div>
-    </div>
-
-    <!-- Progressive Disclosure WOW #3: Closed-Loop Yesterday's Scorecard (Hidden by Default) -->
-    <section class="scorecard-drawer" id="scorecardDrawer" hidden>
-      <div class="sc-head">
-        <span><strong>Closed-Loop Proof</strong> · Previous service verification (Bistrot Urbain #04)</span>
-        <button type="button" id="closeScorecardBtn" class="link-btn">Hide</button>
-      </div>
-      <div class="sc-grid">
-        <div class="sc-item">
-          <span class="sc-k">Forecast vs. Actual</span>
-          <strong class="sc-v">312 → 319 actual</strong>
-          <span class="sc-s">Inside 287–337 CI · 2.2% error</span>
-        </div>
-        <div class="sc-item">
-          <span class="sc-k">Kitchen &amp; Invoice Proof</span>
-          <strong class="sc-v emerald">0 stockouts · €238 saved</strong>
-          <span class="sc-s">Verified on Rungis/Metro invoice</span>
-        </div>
-        <div class="sc-item">
-          <span class="sc-k">Model Learning Loop</span>
-          <strong class="sc-v">Auto-calibrated (+1.2%)</strong>
-          <span class="sc-s">Rain walk-in elasticity updated</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Collapsible Signal & Fridge Editor (Hidden by Default) -->
-    <section class="signals-drawer" id="signalsDrawer" hidden>
-      <div class="drawer-grid">
-        <label class="drawer-field">
-          <span>Tomorrow’s Service</span>
-          <select id="daySelect">
-            <option value="saturday" selected>Saturday</option>
-            <option value="friday">Friday</option>
-            <option value="thursday">Thursday</option>
-            <option value="wednesday">Wednesday</option>
-            <option value="tuesday">Tuesday</option>
-          </select>
-        </label>
-        <label class="drawer-field">
-          <span>Zenchef Bookings (<strong id="bookingsValLabel">198</strong>)</span>
-          <input type="range" id="bookingsRange" min="60" max="320" value="198" />
-        </label>
-        <label class="drawer-field">
-          <span>Weather Forecast</span>
-          <select id="weatherSelect">
-            <option value="heavy_rain" selected>Heavy Rain (14mm)</option>
-            <option value="light_rain">Light Showers (3mm)</option>
-            <option value="cloudy">Mild Overcast</option>
-            <option value="sunny">Clear &amp; Warm (22°C)</option>
-          </select>
-        </label>
-        <label class="drawer-field">
-          <span>Nearby Event (&lt;600m)</span>
-          <select id="eventSelect">
-            <option value="tradeshow" selected>Porte de Versailles Expo</option>
-            <option value="none">None</option>
-            <option value="match">Match Night Surge</option>
-            <option value="strike">Metro Line 12 Strike</option>
-          </select>
-        </label>
-      </div>
-      <div class="fridge-inline">
-        <div class="fridge-inline-label">Auto-estimated fridge stock (Yesterday’s delivery − Tonight’s POS sales) — edit if needed:</div>
-        <div class="fridge-inline-grid" id="fridgeInputsGrid"></div>
-      </div>
-    </section>
-
-    <!-- 1. HERO SUMMARY: 3 NUMBERS + 1-SITE / 12-SITE CFO TOGGLE + CLEAN VISUAL SCALE -->
-    <section class="hero-summary">
-      <div class="scope-row">
-        <span class="scope-title" id="scopeTitle">Chef Karim View · Site #04 Montparnasse</span>
-        <div class="scope-toggle" role="group" aria-label="Single site or 12-site CFO group view">
-          <button type="button" class="scope-btn active" data-scope="1">1 site (#04)</button>
-          <button type="button" class="scope-btn" data-scope="12">12 sites (Group CFO)</button>
-        </div>
-      </div>
-
-      <div class="three-metrics">
-        <div class="metric">
-          <div class="metric-val" id="metricCovers">312</div>
-          <div class="metric-label" id="metricCoversLabel">covers expected tomorrow</div>
-          <div class="metric-sub" id="metricCoversSub">likely 287–337 · usually 395</div>
-        </div>
-        <div class="metric-divider"></div>
-        <div class="metric">
-          <div class="metric-val" id="metricOrder">€541</div>
-          <div class="metric-label" id="metricOrderLabel">tomorrow’s order total</div>
-          <div class="metric-sub" id="metricOrderSub">instead of €787 usual</div>
-        </div>
-        <div class="metric-divider"></div>
-        <div class="metric">
-          <div class="metric-val emerald" id="metricSaved">−€246</div>
-          <div class="metric-label" id="metricSavedLabel">waste avoided</div>
-          <div class="metric-sub" id="metricSavedSub">−31.3% food spend</div>
-        </div>
-      </div>
-
-      <!-- Progressive Disclosure WOW #2: CFO 12-Site Annualized Proof Banner (Shown only when 12 sites toggled) -->
-      <div class="cfo-ripple-bar" id="cfoRippleBar" hidden>
-        <span><strong>Bistrot Urbain Group Impact (12 Paris sites):</strong></span>
-        <span>Year-1 Hard COGS Savings: <strong>€150,000</strong> (50% capture)</span>
-        <span>·</span>
-        <span>Net ROI: <strong>310%</strong></span>
-        <span>·</span>
-        <span>Payback: <strong>1.4 months</strong></span>
-      </div>
-
-      <!-- Beautiful, Clear Forecast vs. Usual Visual Bar -->
-      <div class="forecast-visual">
-        <div class="fv-header">
-          <span class="fv-legend-item">
-            <span class="fv-dot emerald-dot"></span>
-            CoverCast forecast: <strong id="fvCcText">312 covers (287–337)</strong>
-          </span>
-          <span class="fv-gap-badge" id="fvGapBadge">−83 covers vs. usual</span>
-          <span class="fv-legend-item">
-            <span class="fv-dot rose-dot"></span>
-            Karim’s usual guess: <strong id="fvHabitText">395</strong>
-          </span>
-        </div>
-        <div class="fv-track">
-          <div class="fv-gap-bar" id="fvGapBar"></div>
-          <div class="fv-ci-band" id="fvCiBand"></div>
-          <div class="fv-marker cc" id="fvCcMarker"></div>
-          <div class="fv-marker habit" id="fvHabitMarker"></div>
-        </div>
-      </div>
-
-      <!-- Clear, Scannable "Why" Driver Pills + 1 Crisp Sentence -->
-      <div class="why-block">
-        <div class="why-pills" id="whyPills"></div>
-        <p class="why-sentence" id="whyLine"></p>
-      </div>
-    </section>
-
-    <!-- 2. CHEF VOICE & TEXT COMMAND BAR (THE REAL LLM LAYER) -->
-    <section class="copilot-section">
-      <form id="commandForm" class="command-bar">
-        <button type="button" id="micBtn" class="mic-btn" title="Click and speak a kitchen update" aria-label="Voice input">
-          <span id="micIcon">🎙️</span>
-        </button>
-        <input
-          type="text"
-          id="commandInput"
-          class="command-input"
-          placeholder="Speak or type any last-minute kitchen update… (e.g., “group of 25 just booked”)"
-          autocomplete="off"
-        />
-        <button type="button" id="micLangBtn" class="lang-btn" title="Switch voice recognition language">EN</button>
-        <button type="submit" id="commandSubmitBtn" class="apply-btn">Apply</button>
-      </form>
-
-      <!-- Live Speech Transcript Bar (Visible while speaking or if mic feedback needed) -->
-      <div class="voice-transcript-bar" id="voiceBar" hidden>
-        <span class="voice-pulse"></span>
-        <span class="voice-status" id="voiceStatusText">Listening…</span>
-        <span class="voice-live-words" id="voiceLiveWords"></span>
-      </div>
-
-      <!-- 3 Instant 1-Click Demo Curveballs -->
-      <div class="quick-prompts">
-        <span class="quick-label">Try saying / clicking:</span>
-        <button type="button" class="prompt-pill" data-cmd="Group of 25 just booked for tomorrow">
-          “Group of 25 just booked”
-        </button>
-        <button type="button" class="prompt-pill" data-cmd="Rungis is out of cod, swap to sea bass">
-          “Rungis out of cod → swap sea bass”
-        </button>
-        <button type="button" class="prompt-pill" data-cmd="Fridge is actually empty on salad greens">
-          “Fridge empty on salad greens”
-        </button>
-      </div>
-
-      <!-- Reflective AI Proposal / Confirmation Card (Reflect -> Ask Yes/Cancel -> Refine Loop) -->
-      <div class="ai-diff-card" id="aiDiffCard" hidden>
-        <div class="ai-diff-top">
-          <div class="ai-diff-headline">
-            <span class="ai-spark" id="aiCardBadge">🧠 AI Reflection</span>
-            <span class="ai-heard" id="aiHeardQuote"></span>
-          </div>
-          <div class="ai-diff-actions">
-            <span class="ai-cost-mini" id="aiCostMini">$0.000345</span>
-            <button type="button" id="undoCmdBtn" class="undo-btn" hidden>↺ Undo applied</button>
-          </div>
-        </div>
-        <p class="ai-reflection-text" id="aiReflectionText"></p>
-        <div class="ai-diff-pills" id="aiDiffPills"></div>
-        <div class="ai-confirm-bar" id="aiConfirmBar" hidden>
-          <span class="ai-confirm-q" id="aiConfirmQuestion">Should I apply these changes to tomorrow’s order?</span>
-          <div class="ai-confirm-btns">
-            <button type="button" id="confirmYesBtn" class="confirm-yes-btn">✓ Yes, apply</button>
-            <button type="button" id="confirmCancelBtn" class="confirm-cancel-btn">✕ Cancel</button>
-          </div>
-        </div>
-        <div class="ai-refine-hint" id="aiRefineHint" hidden>
-          Or say / type a tweak to adjust this proposal first (e.g., “keep cod at 8 kg”, “make it 15 people”, “yes”, or “cancel”).
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. CLEAR 6-ROW SHOPPING LIST WITH SELF-EXPLANATORY COLUMN HEADERS -->
-    <section class="order-card">
-      <div class="order-card-head">
+  <!-- Two Physical Kitchen-Office Objects Side by Side -->
+  <main class="desk">
+    <!-- ================================================================= -->
+    <!-- LEFT OBJECT: DARK CHALKBOARD PREP AGENT                           -->
+    <!-- ================================================================= -->
+    <section class="chalkboard" aria-label="CoverCast Prep Agent">
+      <div class="board-head">
         <div>
-          <span class="order-title">Tomorrow’s 6 fresh ingredients</span>
-          <span class="order-hint">Fridge stock auto-calculated from yesterday’s delivery − tonight’s POS sales</span>
+          <span class="board-kicker" id="boardKicker">6 PM PREP AGENT · AUTONOMOUS DEMO</span>
+          <h1 class="board-title" id="boardHeadline">Tomorrow’s order is ready.</h1>
         </div>
-        <button type="button" id="resetOrderBtn" class="link-btn" hidden>Reset all changes</button>
+        <div class="conf-badge high" id="confidenceBadge">READY TO SEND</div>
       </div>
 
-      <div class="order-col-headers">
-        <span>Ingredient &amp; Supplier</span>
-        <span class="col-center">Est. in Fridge (POS)</span>
-        <span class="col-center">Order Qty (Adjust)</span>
-        <span class="col-right">Line Cost &amp; Savings</span>
-      </div>
+      <!-- DEMO MODE ONLY: Autonomous Signal Discovery Card -->
+      <div class="signal-card" id="signalDiscoveryCard" aria-label="Autonomous Signal Discovery">
+        <div class="sd-head">
+          <div class="sd-title-wrap">
+            <span class="sd-kicker">
+              <span class="sd-pulse" id="sdPulseDot" aria-hidden="true"></span>
+              AUTONOMOUS SIGNAL DISCOVERY
+            </span>
+            <span class="sd-sub">Agent searches real events, live weather &amp; local drivers on its own</span>
+          </div>
+          <button type="button" id="rescanSignalsBtn" class="sd-rescan-btn" title="Re-scan live Paris weather, events, transit and calendar drivers">
+            ↻ Re-scan live signals
+          </button>
+        </div>
 
-      <div class="order-rows" id="orderRows"></div>
-    </section>
+        <div class="sd-api-callout" id="signalApiCallout" hidden></div>
 
-    <!-- 4. BIG GREEN SEND BUTTON -->
-    <section class="send-footer" id="sendFooter">
-      <div class="send-meta">
-        <span>Ready in <strong id="prepTimer">00:32</strong> (vs. 45 min manual) · Drafts &amp; sends 5 supplier emails</span>
-      </div>
-      <button type="button" id="sendOrderBtn" class="send-btn">
-        Draft &amp; Send 5 Supplier Emails · <span id="sendTotalSpan">€541</span>
-      </button>
-    </section>
+        <div class="sd-list" id="signalDiscoveryList"></div>
 
-    <!-- 5. DRAFTED & SENT SUPPLIER EMAILS (WITH REAL MAILTO + VENDOR TABS) -->
-    <section class="sent-card" id="sentCard" hidden>
-      <div class="sent-head">
-        <div class="sent-title-wrap">
-          <span class="sent-check">✓</span>
-          <div>
-            <h2 id="sentTitle">5 supplier emails drafted &amp; sent (€541)</h2>
-            <p id="sentSubtitle"></p>
+        <div class="sd-summary-line" id="signalSummaryLine" hidden></div>
+
+        <div class="sd-net" id="signalNetBar">
+          <span class="sd-net-label">NET AUTONOMOUS INFLUENCE</span>
+          <div class="sd-net-right">
+            <span class="sd-breakdown" id="signalBreakdown">Weighing drivers…</span>
+            <span class="sd-net-pill neu" id="signalNetPill">±0 covers</span>
           </div>
         </div>
-        <div class="sent-actions">
-          <a id="mailtoLinkBtn" class="emerald-btn" href="#">Open in Mail App ↗</a>
-          <button type="button" id="downloadPoBtn" class="subtle-btn">Download .txt</button>
-          <button type="button" id="editOrderBtn" class="subtle-btn">← Edit order</button>
+      </div>
+
+      <!-- Ordered Plain-English Agent Steps -->
+      <div class="trace-box">
+        <div class="trace-top">
+          <span class="trace-label">WHAT THE AGENT DID</span>
+          <button type="button" id="toggleJsonBtn" class="board-link">Inspect JSON · API key needed</button>
+        </div>
+        <div class="trace-lines" id="agentTraceLines"></div>
+        <pre class="json-drawer" id="jsonDrawer" hidden></pre>
+      </div>
+
+      <!-- WOW #1: CHEF CHECK HAND-OFF GATE (VISIBLE ONLY ON UNFAMILIAR BIG EVENT) -->
+      <div class="handoff-box" id="handoffBox" hidden>
+        <div class="handoff-head">
+          <span>⚠ UNFAMILIAR EVENT · NEEDS KARIM’S CHECK</span>
+          <span class="handoff-tag">SEND LOCKED</span>
+        </div>
+        <p class="handoff-reason" id="handoffReason">
+          Unscheduled Montparnasse street concert nearby — 0 matching nights in POS history. Set your call to unlock the ticket:
+        </p>
+
+        <div class="handoff-q">
+          <span class="hq-label">1. Expected walk-in surge?</span>
+          <div class="hq-pills" id="surgeChoiceGroup">
+            <button type="button" class="hq-pill" data-surge="30">+30 mild</button>
+            <button type="button" class="hq-pill active" data-surge="65">+65 busy</button>
+            <button type="button" class="hq-pill" data-surge="110">+110 packed</button>
+          </div>
+        </div>
+
+        <div class="handoff-q">
+          <span class="hq-label">2. 24h fresh fish posture?</span>
+          <div class="hq-pills" id="postureChoiceGroup">
+            <button type="button" class="hq-pill active" data-posture="safe">Play safe (cut spoilage)</button>
+            <button type="button" class="hq-pill" data-posture="protect">Match surge (0 stockout)</button>
+          </div>
+        </div>
+
+        <button type="button" id="resolveHandoffBtn" class="unlock-btn">
+          ✓ Confirm Chef Call &amp; Unlock Ticket
+        </button>
+      </div>
+
+      <!-- Chef Voice / Text Reflective Copilot -->
+      <div class="copilot-area">
+        <div class="copilot-label">ASK OR OVERRIDE THE AGENT (VOICE OR TEXT)</div>
+        <form id="commandForm" class="cmd-bar">
+          <button type="button" id="micBtn" class="mic-btn" title="Speak a kitchen note" aria-label="Voice input">🎙️</button>
+          <input
+            type="text"
+            id="commandInput"
+            class="cmd-input"
+            placeholder="e.g., “Rungis out of cod → swap sea bass” or “group of 25”"
+            autocomplete="off"
+          />
+          <button type="button" id="micLangBtn" class="lang-pill">EN</button>
+          <button type="submit" id="commandSubmitBtn" class="ask-btn">Ask</button>
+        </form>
+
+        <!-- Live Voice Transcription Strip -->
+        <div class="voice-strip" id="voiceBar" hidden>
+          <span class="v-dot"></span>
+          <span id="voiceStatusText">Listening…</span>
+          <span class="v-words" id="voiceLiveWords"></span>
+        </div>
+
+        <!-- Reflective AI Proposal Card (Yes / Cancel / Refine Loop) -->
+        <div class="reflect-card" id="aiDiffCard" hidden>
+          <div class="reflect-top">
+            <span class="reflect-badge" id="aiCardBadge">AGENT REFLECTION</span>
+            <span class="reflect-cost" id="aiCostMini"></span>
+          </div>
+          <p class="reflect-text" id="aiReflectionText"></p>
+          <div class="reflect-pills" id="aiDiffPills"></div>
+          <div class="reflect-actions" id="aiConfirmBar" hidden>
+            <button type="button" id="confirmYesBtn" class="r-yes">✓ Yes, apply</button>
+            <button type="button" id="confirmCancelBtn" class="r-no">✕ Cancel</button>
+            <span class="r-hint">or type a tweak</span>
+          </div>
+          <button type="button" id="undoCmdBtn" class="board-link" hidden>↺ Undo applied change</button>
         </div>
       </div>
 
-      <div class="vendor-tabs" id="vendorTabs"></div>
+      <!-- Linked Reservation App Status & Reset -->
+      <div class="board-footer">
+        <span class="res-linked"><span class="res-dot" aria-hidden="true"></span>Reservation app linked · <strong id="bookingsFooterVal">182</strong> guests booked</span>
+        <button type="button" id="resetAllBtn" class="board-link">↺ Reset demo</button>
+      </div>
+    </section>
 
-      <div class="email-preview-box">
-        <div class="email-meta-row"><span>To:</span> <strong id="emailToField"></strong></div>
-        <div class="email-meta-row"><span>Subject:</span> <strong id="emailSubjectField"></strong></div>
-        <pre class="email-body" id="vendorMessagePreview"></pre>
+    <!-- ================================================================= -->
+    <!-- RIGHT OBJECT: REAL CREAM THERMAL KITCHEN ORDER TICKET             -->
+    <!-- ================================================================= -->
+    <section class="ticket-wrap" aria-label="Tomorrow's Supplier Order Ticket">
+      <div class="ticket" id="orderTicket">
+        <!-- Animated Rubber Stamp -->
+        <div class="rubber-stamp ready" id="ticketStamp">READY</div>
+
+        <div class="ticket-kicker" id="ticketDateLine">ORDER SLIP · TOMORROW (SATURDAY)</div>
+        <div class="ticket-hero">
+          <div class="ticket-covers" id="metricCovers">312 covers</div>
+          <div class="ticket-ci" id="metricCoversSub">90% range 287–337 · usual guess 395</div>
+        </div>
+
+        <!-- Clean Visual Gap Bar (CoverCast vs Habit) -->
+        <div class="ticket-bar-wrap">
+          <div class="tbar-track">
+            <div class="tbar-gap" id="tbarGap"></div>
+            <div class="tbar-ci" id="tbarCi"></div>
+            <div class="tbar-dot cc" id="tbarCc"></div>
+            <div class="tbar-dot hab" id="tbarHab"></div>
+          </div>
+          <div class="tbar-legend">
+            <span><i class="dot-g"></i> CoverCast <b id="legCc">312</b></span>
+            <span id="legGap" class="gap-txt">−83 vs. usual</span>
+            <span><i class="dot-r"></i> Habit <b id="legHab">395</b></span>
+          </div>
+        </div>
+
+        <hr class="dash" />
+
+        <!-- Exact Slide 3 Money Summary -->
+        <div class="ticket-totals">
+          <div class="tot-row"><span>Order tonight</span><strong id="metricOrder">541 EUR</strong></div>
+          <div class="tot-row muted"><span>Instead of the usual</span><span id="metricUsual">787 EUR</span></div>
+          <div class="tot-row highlight" id="savingsRow">
+            <span id="metricSavedLabel">Not bought tonight</span>
+            <strong id="metricSaved">246 EUR</strong>
+          </div>
+        </div>
+
+        <hr class="dash" />
+
+        <!-- Ultra-Clean 6-Item Thermal List -->
+        <div class="ticket-col-head">
+          <span>ITEM · POS FRIDGE STOCK</span>
+          <span>QTY (USUAL → NOW)</span>
+          <span class="r-align">TOTAL</span>
+        </div>
+        <div class="ticket-items" id="orderRows"></div>
+
+        <hr class="dash" />
+
+        <!-- Primary Send CTA (Locks automatically during Low-Confidence Hand-Off!) -->
+        <div id="sendArea">
+          <button type="button" id="sendOrderBtn" class="ticket-send-btn">
+            ✓ SEND 5 SUPPLIER ORDERS · 541 EUR
+          </button>
+          <div class="ticket-footnote" id="ticketFootnote" hidden></div>
+        </div>
+
+        <!-- Post-Send Area: Real Drafted Email + WOW #2 Fast-Forward 24h Button -->
+        <div class="sent-panel" id="sentPanel" hidden>
+          <div class="sent-banner">
+            <span id="sentSummaryLine">✓ 5 supplier orders dispatched (541 EUR)</span>
+            <div class="sent-mini-actions">
+              <a id="mailtoLinkBtn" class="mini-pill-link" href="#">Mail App ↗</a>
+              <button type="button" id="downloadPoBtn" class="mini-pill-btn">.txt</button>
+              <button type="button" id="editOrderBtn" class="mini-pill-btn">Edit</button>
+            </div>
+          </div>
+
+          <div class="vendor-strip" id="vendorTabs"></div>
+          <pre class="email-slip" id="vendorMessagePreview"></pre>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Claude API Key Modal (Direct Browser CORS — Works on GitHub Pages) -->
+  <!-- Single-Field API Key Modal -->
   <div class="modal-backdrop" id="claudeModal" hidden>
-    <div class="modal-card" role="dialog" aria-labelledby="claudeModalTitle">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="claudeModalTitle">
       <div class="modal-head">
-        <h3 id="claudeModalTitle">Connect Anthropic Claude API</h3>
+        <h3 id="claudeModalTitle">API Key</h3>
         <button type="button" id="closeClaudeModalBtn" class="close-x" aria-label="Close">×</button>
       </div>
       <p class="modal-desc">
-        Plug in your Claude API key (<code>sk-ant-…</code>) to power the reflective kitchen copilot with live Claude reasoning directly from your browser. Kept in session memory only—never saved to any server.
+        Enter one API key (Anthropic, OpenAI, or Gemini). Without a key, all agentic features remain inactive.
       </p>
-
       <label class="modal-label">
-        <span>Claude Model</span>
-        <select id="claudeModelSelect" class="modal-input">
-          <option value="claude-haiku-5-5">Claude Haiku 5.5 (claude-haiku-5-5) — Fastest</option>
-          <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (claude-sonnet-5-5) — Balanced</option>
-          <option value="claude-opus-5-5">Claude Opus 5.5 (claude-opus-5-5) — Deep Reasoning</option>
-          <option value="claude-fable-5-2">Claude Fable 5.2 (claude-fable-5-2) — Flagship</option>
-          <option value="custom">Custom Model ID…</option>
-        </select>
+        <span>API Key</span>
+        <input type="password" id="claudeKeyInput" class="modal-input" placeholder="Paste your API key (sk-ant-…, sk-…, or AIza…)" autocomplete="off" />
+        <span class="modal-hint" id="apiKeyAutoHint"></span>
       </label>
-
-      <label class="modal-label" id="customModelWrap" hidden>
-        <span>Custom Anthropic Model ID</span>
-        <input type="text" id="customModelInput" class="modal-input" placeholder="e.g., claude-opus-4-6 or claude-haiku-4-5" />
-      </label>
-
-      <label class="modal-label">
-        <span>Anthropic API Key</span>
-        <input type="password" id="claudeKeyInput" class="modal-input" placeholder="sk-ant-api03-…" autocomplete="off" />
-      </label>
-
-      <div class="modal-status" id="claudeModalStatus" hidden></div>
-
+      <p class="modal-error" id="claudeModalError" hidden></p>
       <div class="modal-btn-row">
-        <button type="button" id="disconnectClaudeBtn" class="subtle-btn" hidden>Disconnect</button>
-        <button type="button" id="saveClaudeBtn" class="send-btn" style="flex: 1;">Connect Live Claude</button>
+        <button type="button" id="disconnectClaudeBtn" class="mini-pill-btn" hidden>Remove Key</button>
+        <button type="button" id="saveClaudeBtn" class="unlock-btn" style="flex:1;">Save Key</button>
       </div>
     </div>
   </div>
 
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./supplier-agent.js"></script>
 </body>
 </html>

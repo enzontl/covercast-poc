@@ -1,0 +1,409 @@
+/* =========================================================================
+ * CoverCast — Autonomous Supplier Negotiation & Fallback Agent Popup
+ * Visual system: Paris kitchen-office palette (chalkboard + cream receipt)
+ * Non-pushy bottom-right floating card — zero backdrop, zero screen flood.
+ * ========================================================================= */
+
+.sa-dock {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 950;
+  width: 370px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.sa-card {
+  pointer-events: auto;
+  position: relative;
+  background: var(--chalk, #1e2b25);
+  color: var(--paper, #f3ead3);
+  border: 1px solid rgba(227, 169, 43, 0.42);
+  border-top: 3px solid var(--saffron, #e3a92b);
+  border-radius: 8px;
+  box-shadow:
+    0 14px 34px rgba(18, 17, 16, 0.3),
+    0 2px 8px rgba(18, 17, 16, 0.16);
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  transition:
+    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.sa-card.sa-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.sa-card.sa-state-checking {
+  border-color: rgba(227, 169, 43, 0.45);
+  border-top-color: var(--saffron, #e3a92b);
+  padding: 11px 14px;
+  gap: 5px;
+}
+
+.sa-card.sa-state-offer {
+  border-color: rgba(227, 169, 43, 0.5);
+  border-top-color: var(--tomato, #d6452d);
+}
+
+.sa-card.sa-state-error {
+  background: #261b19;
+  border-color: rgba(214, 69, 45, 0.52);
+  border-top-color: var(--tomato, #d6452d);
+  padding: 12px 14px;
+  gap: 8px;
+}
+
+.sa-card.sa-state-confirmed {
+  background: #173026;
+  border-color: rgba(74, 222, 128, 0.55);
+  border-top-color: #4ade80;
+  padding: 12px 14px;
+  gap: 5px;
+  cursor: pointer;
+}
+
+/* Header Row */
+.sa-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sa-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.sa-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: "Space Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--saffron, #e3a92b);
+  min-width: 0;
+}
+
+.sa-state-offer .sa-kicker {
+  color: #fde68a;
+}
+
+.sa-state-confirmed .sa-kicker {
+  color: #86efac;
+}
+
+.sa-state-error .sa-kicker {
+  color: #fca5a5;
+}
+
+.sa-meta-tag {
+  font-family: "Space Mono", monospace;
+  font-size: 9.5px;
+  font-weight: 400;
+  color: var(--dmuted, #b7b09e);
+  background: rgba(243, 234, 211, 0.08);
+  border: 1px solid rgba(243, 234, 211, 0.16);
+  padding: 1px 6px;
+  border-radius: 4px;
+  max-width: 118px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--saffron, #e3a92b);
+}
+
+.sa-dot.sa-pulse {
+  animation: saPulse 1.15s ease-in-out infinite;
+}
+
+.sa-dot.sa-alert {
+  background: var(--tomato, #d6452d);
+  box-shadow: 0 0 0 3px rgba(214, 69, 45, 0.28);
+}
+
+.sa-dot.sa-err {
+  background: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.24);
+}
+
+.sa-dot.sa-ok {
+  background: #4ade80;
+}
+
+@keyframes saPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(227, 169, 43, 0.55);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    box-shadow: 0 0 0 5px rgba(227, 169, 43, 0);
+  }
+}
+
+.sa-close {
+  border: none;
+  background: transparent;
+  color: var(--dmuted, #b7b09e);
+  font-size: 17px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.sa-close:hover {
+  color: var(--tkt, #fffbef);
+  background: rgba(243, 234, 211, 0.1);
+}
+
+/* Trigger / Status Copy */
+.sa-reason {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.38;
+  color: var(--tkt, #fffbef);
+}
+
+.sa-reason strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sa-status-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--paper, #f3ead3);
+}
+
+.sa-error-msg {
+  margin: 0;
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  line-height: 1.42;
+  color: #fecaca;
+  background: rgba(214, 69, 45, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 5px;
+  padding: 7px 9px;
+  word-break: break-word;
+  max-height: 84px;
+  overflow-y: auto;
+}
+
+.sa-confirm-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.38;
+  color: #ecfdf5;
+}
+
+/* Highlighted Recommendation Slip (Cream Kitchen Receipt Inset) */
+.sa-offer-box {
+  background: var(--tkt, #fffbef);
+  color: var(--ink, #121110);
+  border-radius: 6px;
+  border-left: 3.5px solid var(--saffron, #e3a92b);
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sa-offer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sa-supplier-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink, #121110);
+  line-height: 1.2;
+}
+
+.sa-slot-badge {
+  font-family: "Space Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green, #176654);
+  background: rgba(23, 102, 84, 0.12);
+  border: 1px solid rgba(23, 102, 84, 0.28);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sa-offer-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink, #121110);
+}
+
+.sa-sku-qty {
+  font-weight: 700;
+}
+
+.sa-cost-impact {
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  color: #4a453b;
+}
+
+.sa-cost-delta {
+  font-weight: 700;
+  color: var(--tomato, #d6452d);
+}
+
+.sa-cost-delta.sa-even {
+  color: var(--green, #176654);
+}
+
+/* Compact Agent Rationale Line */
+.sa-agent-note {
+  margin: 0;
+  font-family: "Space Mono", monospace;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--dmuted, #b7b09e);
+}
+
+/* Action Buttons */
+.sa-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.sa-btn-primary {
+  flex: 1;
+  border: none;
+  border-radius: 5px;
+  background: var(--saffron, #e3a92b);
+  color: var(--ink, #121110);
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.sa-btn-primary:hover {
+  filter: brightness(1.07);
+}
+
+.sa-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.sa-btn-secondary {
+  border: 1px solid rgba(243, 234, 211, 0.25);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dmuted, #b7b09e);
+  font-family: "Space Mono", monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 8px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.sa-btn-secondary:hover {
+  border-color: rgba(243, 234, 211, 0.55);
+  color: var(--tkt, #fffbef);
+  background: rgba(243, 234, 211, 0.06);
+}
+
+/* Manual Demo Trigger Pill injected inside #sentPanel .sent-mini-actions */
+.sent-mini-actions {
+  flex-wrap: wrap;
+}
+
+.sa-sim-pill {
+  font-family: "Space Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--saffron, #e3a92b);
+  background: rgba(227, 169, 43, 0.2);
+  color: var(--ink, #121110);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.sa-sim-pill:hover:not(:disabled) {
+  background: var(--saffron, #e3a92b);
+}
+
+.sa-sim-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-sim-pill[data-state="busy"]:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 520px) {
+  .sa-dock {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .sa-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
